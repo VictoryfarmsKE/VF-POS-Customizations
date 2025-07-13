@@ -1,0 +1,79 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-07-13 22:10:51.397062",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_hoc9",
+  "enable",
+  "client_id",
+  "client_secret_id",
+  "authorization"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_hoc9",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable",
+   "fieldtype": "Check",
+   "label": "Enable"
+  },
+  {
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "label": "Client ID",
+   "mandatory_depends_on": "eval:doc.enable == 1;"
+  },
+  {
+   "fieldname": "client_secret_id",
+   "fieldtype": "Data",
+   "label": "Client Secret ID",
+   "mandatory_depends_on": "eval:doc.enable == 1;"
+  },
+  {
+   "fieldname": "authorization",
+   "fieldtype": "Small Text",
+   "label": "Authorization",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-07-13 22:10:51.397062",
+ "modified_by": "Administrator",
+ "module": "VF POS Customizations",
+ "name": "Pezesha Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
