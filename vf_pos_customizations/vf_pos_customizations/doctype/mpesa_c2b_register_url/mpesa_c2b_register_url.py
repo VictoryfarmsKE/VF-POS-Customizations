@@ -4,7 +4,7 @@
 import frappe, requests
 from frappe.model.document import Document
 from frappe.utils import get_request_site_address
-from vf_pos_customizations.vf_pos_customizations.api.m_pesa import get_token
+from vf_pos_customizations.vf_pos_customizations.api.mpesa import get_token
 
 
 class MpesaC2BRegisterURL(Document):
