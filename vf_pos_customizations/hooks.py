@@ -9,9 +9,11 @@ fixtures = [
     "Client Script",
     "Server Script",
     "Custom Field",
+    "Property Setter",
     {"dt": "Client Script", "filters": [["module", "like", "VF POS Customizations"]]},
     {"dt": "Server Script", "filters": [["module", "like", "VF POS Customizations"]]},
     {"dt": "Custom Field", "filters": [["module", "like", "VF POS Customizations"]]},
+    {"dt": "Property Setter", "filters": [["module", "like", "VF POS Customizations"]]},
 ]
 # Apps
 # ------------------
@@ -51,7 +53,7 @@ fixtures = [
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+# doctype_js = {"doctype" : "public/js/doctype.js"} (to use)
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -141,7 +143,7 @@ fixtures = [
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
 
-# Document Events
+# Document Events (to use)
 # ---------------
 # Hook on document methods and events
 
@@ -155,6 +157,12 @@ fixtures = [
 
 # Scheduled Tasks
 # ---------------
+
+scheduler_events = {
+    "daily": [
+        "vf_pos_customizations.vf_pos_customizations.doctype.pezesha_settings.pezesha_settings.corn"
+    ]
+}
 
 # scheduler_events = {
 # 	"all": [

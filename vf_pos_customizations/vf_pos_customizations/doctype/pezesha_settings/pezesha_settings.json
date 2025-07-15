@@ -2,6 +2,7 @@
  "actions": [],
  "allow_rename": 1,
  "creation": "2025-07-13 22:10:51.397062",
+ "default_view": "List",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -45,22 +46,12 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-07-13 22:10:51.397062",
+ "modified": "2025-07-15 11:27:47.655933",
  "modified_by": "Administrator",
  "module": "VF POS Customizations",
  "name": "Pezesha Settings",
  "owner": "Administrator",
  "permissions": [
-  {
-   "create": 1,
-   "delete": 1,
-   "email": 1,
-   "print": 1,
-   "read": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
   {
    "create": 1,
    "delete": 1,
