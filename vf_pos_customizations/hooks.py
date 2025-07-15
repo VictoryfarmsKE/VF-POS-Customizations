@@ -5,6 +5,14 @@ app_description = "POS customizations for Victory Farms"
 app_email = "christinek@victoryfarmskenya.com"
 app_license = "mit"
 
+fixtures = [
+    "Client Script",
+    "Server Script",
+    "Custom Field",
+    {"dt": "Client Script", "filters": [["module", "like", "VF POS Customizations"]]},
+    {"dt": "Server Script", "filters": [["module", "like", "VF POS Customizations"]]},
+    {"dt": "Custom Field", "filters": [["module", "like", "VF POS Customizations"]]},
+]
 # Apps
 # ------------------
 
