@@ -209,7 +209,7 @@ def process_pos_payment(payload: str) -> Dict[str, Any]:
     Process POS payment, including M-Pesa and other payment methods, and reconcile with invoices.
     """
     data = frappe._dict(json.loads(payload))
-    if not data.pos_profile.get("posa_use_pos_awesome_payments"):
+    if not data.pos_profile.get("custom_use_pos_payments"):
         frappe.throw(_("POS Awesome Payments is not enabled for this POS Profile"))
     # Validate required fields
     for field in ["customer", "company", "currency", "pos_profile_name", "pos_opening_shift_name"]:
@@ -249,7 +249,7 @@ def process_pos_payment(payload: str) -> Dict[str, Any]:
                     amount=flt(payment_method.get("amount")),
                     mode_of_payment=payment_method.get("mode_of_payment"),
                     posting_date=today,
-                    reference_no=pos_opening_shift_name,
+                    # reference_no=pos_opening_shift_name,
                     reference_date=today,
                     cost_center=data.pos_profile.get("cost_center"),
                     submit=1,
