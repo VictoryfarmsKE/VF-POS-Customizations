@@ -4,13 +4,27 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2025-07-17 11:49:36.238922",
+ "modified": "2025-07-18 12:47:24.375127",
  "modified_by": "Administrator",
  "module": "VF POS Customizations",
  "name": "pos-payments",
  "owner": "Administrator",
  "page_name": "pos-payments",
- "roles": [],
+ "restrict_to_domain": "Retail",
+ "roles": [
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Sales Manager"
+  },
+  {
+   "role": "Sales User"
+  }
+ ],
  "script": null,
  "standard": "Yes",
  "style": null,
