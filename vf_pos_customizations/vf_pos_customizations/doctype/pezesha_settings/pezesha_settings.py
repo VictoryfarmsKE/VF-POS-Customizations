@@ -108,10 +108,10 @@ def pezesha_loan_status(customer, pos_profile):
 			amt = ddt['loan_amount']
 			return ddt
 		except KeyError:
-			frappe.msgprint("Please Apply Loan Application")
-			return "Please Apply Loan Application"
+			frappe.msgprint("Please Make a Loan Application")
+			return "Please Make a Loan Application"
 	else:
-		frappe.msgprint("Please Apply Loan Application")
+		frappe.msgprint("Please Make a Loan Application")
 		return response.status_code
 		
 def corn():

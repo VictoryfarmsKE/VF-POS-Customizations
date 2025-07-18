@@ -37,7 +37,8 @@ fixtures = [
 # include js, css files in header of desk.html
 # app_include_css = "/assets/vf_pos_customizations/css/vf_pos_customizations.css"
 # app_include_js = "/assets/vf_pos_customizations/js/vf_pos_customizations.js"
-
+app_include_js = [
+]
 # include js, css files in header of web template
 # web_include_css = "/assets/vf_pos_customizations/css/vf_pos_customizations.css"
 # web_include_js = "/assets/vf_pos_customizations/js/vf_pos_customizations.js"

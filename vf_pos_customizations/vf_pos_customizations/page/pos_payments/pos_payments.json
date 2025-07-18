@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2025-07-17 11:49:36.238922",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2025-07-17 11:49:36.238922",
+ "modified_by": "Administrator",
+ "module": "VF POS Customizations",
+ "name": "pos-payments",
+ "owner": "Administrator",
+ "page_name": "pos-payments",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "POS Payment Reconciliation"
+}
