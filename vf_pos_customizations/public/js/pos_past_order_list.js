@@ -83,7 +83,7 @@ frappe.require("erpnext/selling/page/point_of_sale/point_of_sale/pos_past_order_
         this.$invoices_container.html("");
 
         return frappe.call({
-            method: "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list",
+            method: "vf_pos_customizations.custom.point_of_sale.get_past_order_list",
             freeze: true,
             args: { search_term, status, pos_profile},
             callback: (response) => {
