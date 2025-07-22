@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from vf_pos_customizations.vf_pos_customizations.api.payment_entry import create_payment_entry
+from vf_pos_customizations.api.payment_entry import create_payment_entry
 
 
 class MpesaPaymentRegister(Document):
