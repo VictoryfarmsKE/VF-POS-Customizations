@@ -1,4 +1,4 @@
-frappe.require("erpnext/point_of_sale/public/js/pos_payment.js", () => {
+frappe.require("erpnext/selling/page/point_of_sale/pos_payment.js", () => {
     // Override render_payment_section
     erpnext.PointOfSale.Payment.prototype.render_payment_section = function () {
         console.log("Custom render_payment_section called");

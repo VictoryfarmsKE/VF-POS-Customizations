@@ -1,4 +1,4 @@
-frappe.require("erpnext/point_of_sale/public/js/pos_past_order_list.js", () => {
+frappe.require("erpnext/selling/page/point_of_sale/point_of_sale/pos_past_order_list.js", () => {
     erpnext.PointOfSale.PastOrderList.prototype.prepare_dom = function () {
         this.wrapper.append(
             `<section class="past-order-list">
@@ -6,7 +6,7 @@ frappe.require("erpnext/point_of_sale/public/js/pos_past_order_list.js", () => {
                     <div class="label">${__("Recent Orders")}</div>
                     <div class="search-field"></div>
                     <div class="status-field"></div>
-                    <div class="posprofile-field read-only"></div>
+                    <div class="posprofile-field"></div>
                     
                 </div>
                 <div class="invoices-container"></div>
