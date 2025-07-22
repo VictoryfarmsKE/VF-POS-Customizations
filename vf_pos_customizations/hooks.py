@@ -194,6 +194,11 @@ scheduler_events = {
 # override_whitelisted_methods = {
 # 	"frappe.desk.doctype.event.event.get_events": "vf_pos_customizations.event.get_events"
 # }
+
+override_whitelisted_methods = {
+    "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list": "vf_pos_customizations.custom.point_of_sale.get_past_order_list"
+}
+
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
