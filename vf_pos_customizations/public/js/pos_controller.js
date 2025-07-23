@@ -2,6 +2,10 @@ frappe.after_ajax(() => {
 	let retries = 0;
 	const interval = setInterval(() => {
 		if (erpnext?.PointOfSale?.Controller) {
+			//refresh page
+			if (retries > 0) {
+				window.location.reload();
+			}
 			console.log("Overriding POS Controller...");
 
 			erpnext.PointOfSale.Controller.prototype.make_app = function () {
@@ -33,7 +37,7 @@ frappe.after_ajax(() => {
 				]);
 			};
 
-			clearInterval(interval); // stop polling once overridden
+			clearInterval(interval);
 		} else if (retries > 20) {
 			console.warn("POS Controller not loaded, override failed.");
 			clearInterval(interval);

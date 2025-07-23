@@ -62,6 +62,7 @@ app_include_js = [
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
+# doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # Svg Icons
 # ------------------
 # include app icons in desk
@@ -199,7 +200,8 @@ scheduler_events = {
 # }
 
 override_whitelisted_methods = {
-    "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list": "vf_pos_customizations.custom.point_of_sale.get_past_order_list"
+    "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list": "vf_pos_customizations.custom.point_of_sale.get_past_order_list",
+    "erpnext.selling.page.point_of_sale.point_of_sale.create_payment_request": "vf_pos_customizations.custom.point_of_sale.get_past_order_list"
 }
 
 #
