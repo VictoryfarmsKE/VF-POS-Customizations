@@ -55,6 +55,7 @@ frappe.after_ajax(() => {
                         label: __("POS Profile"),
                         fieldtype: "Link",
                         options: "POS Profile",
+                        readonly: 1,
                         onchange: function () {
                             if (me.$component.is(":visible")) me.refresh_list();
                         },
