@@ -307,7 +307,7 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
         const name = $('#pr-mpesa-name').val();
         const mobile = $('#pr-mpesa-mobile').val();
         frappe.call({
-            method: 'vf_pos_customizations.vf_pos_customizations.api.m_pesa.get_mpesa_draft_payments',
+            method: 'vf_pos_customizations.api.mpesa.get_mpesa_draft_payments',
             args: {
                 company: state.company,
                 mode_of_payment: null,

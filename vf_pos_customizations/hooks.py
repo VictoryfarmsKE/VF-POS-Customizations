@@ -38,9 +38,10 @@ fixtures = [
 # app_include_css = "/assets/vf_pos_customizations/css/vf_pos_customizations.css"
 # app_include_js = "/assets/vf_pos_customizations/js/vf_pos_customizations.js"
 app_include_js = [
-    "/assets/vf_pos_customizations/js/pos_controller.js",
-    "/assets/vf_pos_customizations/js/pos_past_order_list.js",
-    "/assets/vf_pos_customizations/js/pos_payment.js"
+    # "/assets/vf_pos_customizations/js/pos_controller.js",
+    # "/assets/vf_pos_customizations/js/pos_past_order_list.js",
+    # "/assets/vf_pos_customizations/js/pos_payment.js"
+    "vf_pos_customizations.bundle.js",
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/vf_pos_customizations/css/vf_pos_customizations.css"
