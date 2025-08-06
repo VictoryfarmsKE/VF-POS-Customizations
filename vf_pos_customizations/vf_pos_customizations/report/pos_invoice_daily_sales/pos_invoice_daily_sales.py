@@ -1,9 +1,6 @@
 # Copyright (c) 2025, Christine Kanga and contributors
 # For license information, please see license.txt
 
-# import frappe
-
-
 import frappe
 from frappe import _
 from frappe.utils import date_diff, add_days, formatdate, get_datetime
