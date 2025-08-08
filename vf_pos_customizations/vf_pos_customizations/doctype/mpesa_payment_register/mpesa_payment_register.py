@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from vf_pos_customizations.api.payment_entry import create_payment_entry
+# from vf_pos_customizations.api.payment_entry import create_payment_entry
 
 
 class MpesaPaymentRegister(Document):
@@ -42,19 +42,19 @@ class MpesaPaymentRegister(Document):
             frappe.throw(_("Customer is required"))
         if not self.mode_of_payment:
             frappe.throw(_("Mode of Payment is required"))
-        self.payment_entry = self.create_payment_entry()
+        # self.payment_entry = self.create_payment_entry()
 
-    def create_payment_entry(self):
-        payment_entry = create_payment_entry(
-            self.company,
-            self.customer,
-            self.transamount,
-            self.currency,
-            self.mode_of_payment,
-            self.posting_date,
-            self.transid,
-            self.posting_date,
-            None,
-            self.submit_payment,
-        )
-        return payment_entry.name
+    # def create_payment_entry(self):
+    #     payment_entry = create_payment_entry(
+    #         self.company,
+    #         self.customer,
+    #         self.transamount,
+    #         self.currency,
+    #         self.mode_of_payment,
+    #         self.posting_date,
+    #         self.transid,
+    #         self.posting_date,
+    #         None,
+    #         self.submit_payment,
+    #     )
+    #     return payment_entry.name

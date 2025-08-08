@@ -123,4 +123,6 @@ def submit_mpesa_payment(mpesa_payment: str, customer: str) -> Dict[str, Any]:
     doc.customer = customer
     doc.submit_payment = 1
     doc.submit()
-    return frappe.get_doc("Payment Entry", doc.payment_entry).as_dict()
+    # return frappe.get_doc("Payment Entry", doc.payment_entry).as_dict()
+    return frappe.msgprint(_("Thank you for your payment."))
+ 

@@ -3,9 +3,9 @@ frappe.after_ajax(() => {
 	const interval = setInterval(() => {
 		if (erpnext?.PointOfSale?.Controller) {
 			//refresh page
-			if (retries > 0) {
-				window.location.reload();
-			}
+			// if (retries > 0) {
+			// 	window.location.reload();
+			// }
 			console.log("Overriding POS Controller...");
 
 			erpnext.PointOfSale.Controller.prototype.make_app = function () {
