@@ -189,7 +189,7 @@ scheduler_events = {
 
 scheduler_events = {
     "cron": {
-        "*/10 * * * *": [
+        "0 */3 * * *": [
             "vf_pos_customizations.custom.point_of_sale.auto_close_open_pos"
         ]
     }

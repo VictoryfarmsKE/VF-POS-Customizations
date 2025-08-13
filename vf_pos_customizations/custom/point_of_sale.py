@@ -1,6 +1,7 @@
 import frappe
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 from frappe.utils import now_datetime, nowdate, nowtime
+from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import make_closing_entry_from_opening
 
 @frappe.whitelist()
 def get_past_order_list(search_term, status, pos_profile, limit=20):
@@ -99,9 +100,7 @@ def get_existing_payment_request(doc, pay):
         return frappe.get_doc("Payment Request", pr)
 
 def auto_close_open_pos():
-    #log when called
     frappe.log_error("Auto-closing open POS sessions")
-    # Find open POS sessions (POS Opening Entry)
     open_entries = frappe.get_all(
         "POS Opening Entry",
         filters={"status": "Open"},
@@ -110,24 +109,15 @@ def auto_close_open_pos():
 
     for entry in open_entries:
         try:
-            # Create POS Closing Entry
-            closing = frappe.get_doc({
-                "doctype": "POS Closing Entry",
-                "pos_profile": entry.pos_profile,
-                "user": entry.user,
-                "company": entry.company,
-                "pos_opening_entry": entry.name,
-                "period_end_date": now_datetime(),
-                "posting_date": nowdate(),
-                "posting_time": nowtime()
-            })
-            closing.insert(ignore_permissions=True)
-            closing.save()
-            closing.submit()
-
-            # frappe.log_error(
-            #     f"Auto-closed POS for profile {entry.pos_profile}, user {entry.user}, opening {entry.name}"
-            # )
+            opening_entry = frappe.get_doc("POS Opening Entry", entry.name)
+            closing_entry = make_closing_entry_from_opening(opening_entry)
+            closing_entry.period_end_date = now_datetime()
+            closing_entry.posting_date = nowdate()
+            closing_entry.posting_time = nowtime()
+            closing_entry.insert(ignore_permissions=True)
+            closing_entry.submit()
+            
+            frappe.log_error(f"Successfully auto-closed POS for profile {entry.pos_profile}, opening entry {entry.name}")
 
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), f"Auto POS Close Failed: {entry.name}")
