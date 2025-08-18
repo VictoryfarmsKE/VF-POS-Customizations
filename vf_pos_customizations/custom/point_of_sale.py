@@ -103,8 +103,9 @@ def auto_close_open_pos():
     frappe.log_error("Auto-closing open POS sessions")
     open_entries = frappe.get_all(
         "POS Opening Entry",
-        filters={"status": "Open"},
+        filters={"status": "Open", "pos_profile": ["!=", "Customer Direct - VFL"]},
         fields=["name", "pos_profile", "user", "company"]
+        
     )
 
     for entry in open_entries:
