@@ -1,10 +1,21 @@
 frappe.after_ajax(() => {
+<<<<<<< HEAD
     let retries = 0;
     const interval = setInterval(() => {
         const Payment = erpnext?.PointOfSale?.Payment;
         if (Payment && !Payment.prototype.__vf_customized) {
             console.log("Overriding POS Payment...");
             Payment.prototype.__vf_customized = true;
+=======
+	let retries = 0;
+	const interval = setInterval(() => {
+		if (erpnext?.PointOfSale?.Payment) {
+			//refresh page
+			// if (retries > 0) {
+			// 	window.location.reload();
+			// }
+			console.log("Overriding POS Payment...");
+>>>>>>> e2a455b (updates: pos)
 
             Payment.prototype.render_payment_section = function () {
                 console.log("Custom render_payment_section called");
