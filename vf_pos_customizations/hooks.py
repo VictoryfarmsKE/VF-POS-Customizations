@@ -193,13 +193,33 @@ scheduler_events = {
 # 	],
 # }
 
+# scheduler_events = {
+#     "cron": {
+#         "0 */3 * * *": [
+#             "vf_pos_customizations.custom.point_of_sale.auto_close_open_pos"
+#         ]
+#     }
+# }
+
 scheduler_events = {
     "cron": {
-        "0 */3 * * *": [
-            "vf_pos_customizations.custom.point_of_sale.auto_close_open_pos"
-        ]
+        # Western Branch: 7am, 10am, 1pm, 4pm
+        "0 7,10,13,16 * * *": [
+            "vf_pos_customizations.custom.point_of_sale.auto_close_open_western_pos"
+        ],
+
+        # Nairobi Branches: 9am, 12pm, 3pm, 6pm
+        "0 9,12,15,18 * * *": [
+            "vf_pos_customizations.custom.point_of_sale.auto_close_open_nrb_pos"
+        ],
+
+        # Mombasa Branch: 8am, 11am, 2pm, 5pm
+        "0 8,11,14,17 * * *": [
+            "vf_pos_customizations.custom.point_of_sale.auto_close_open_msa_pos"
+        ],
     }
 }
+
 # Testing
 # -------
 
