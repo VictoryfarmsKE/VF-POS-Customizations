@@ -9,49 +9,51 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
     <div class="row" style="margin-top: 24px;">
         <div class="col-md-8 col-12 pb-2 pr-0">
             <div class="card p-4" style="min-height: 80vh;">
-            <div class="form-group mb-2">
-                <div id="pr-customer-section"></div>
+                <div class="form-group mb-2">
+                    <div class="d-flex align-items-center">
+                        <div id="pr-customer-section" class="mr-2" style="flex: 1 1 auto;"></div>
+                        <button class="btn" style="background: #00BDF0; color: #fff;" id="pr-search-invoices">Search</button>
+                    </div>
+                    <hr />
+                    <div id="pr-invoices-section">
+                        <h5><strong>Invoices</strong> <span class="text-primary" id="pr-total-outstanding"></span></h5>
+                        <div id="pr-invoices-table" class="mb-3"></div>
+                    </div>
+                </div>
+                <hr/>
+                <div id="pr-mpesa-section">
+                    <h5><strong>Search Mpesa Payments</strong></h5>
+                    <div class="form-row mb-2">
+                        <div class="col-md-4 col-12">
+                            <input type="text" class="form-control" id="pr-mpesa-name" placeholder="Search by Name" />
+                        </div>
+                        <div class="col-md-3 col-12">
+                            <button class="btn" style="background: #00BDF0; color: #fff;" id="pr-search-mpesa">Search</button>
+                        </div>
+                    </div>
+                    <div id="pr-mpesa-table" class="mb-3"></div>
+                </div>
             </div>
-            <hr />
-            <div id="pr-invoices-section">
-                <h5><strong>Invoices</strong> <span class="text-primary" id="pr-total-outstanding"></span></h5>
-              
-                <div id="pr-invoices-table" class="mb-3"></div>
-            </div>
-          <hr/>
-          <div id="pr-mpesa-section">
-            <h5><strong>Search Mpesa Payments</strong></h5>
-            <div class="form-row mb-2">
-              <div class="col-md-4 col-12">
-                <input type="text" class="form-control" id="pr-mpesa-name" placeholder="Search by Name" />
-              </div>
-              <div class="col-md-3 col-12">
-                <button class="btn" style="background: #00BDF0; color: #fff;" id="pr-search-mpesa">Search</button>
-              </div>
-            </div>
-            <div id="pr-mpesa-table" class="mb-3"></div>
-          </div>
         </div>
-      </div>
-      <div class="col-md-4 col-12 pb-3">
-        <div class="card p-4" style="min-height: 80vh;">
-            <div class="form-group mb-2">
-                <label for="pr-current-pos-profile"><strong>POS Profile</strong></label>
-                <input type="text" class="form-control" id="pr-current-pos-profile" readonly />
+        <div class="col-md-4 col-12 pb-3">
+            <div class="card p-4" style="min-height: 80vh;">
+                <div class="form-group mb-2">
+                    <label for="pr-current-pos-profile"><strong>POS Profile</strong></label>
+                    <input type="text" class="form-control" id="pr-current-pos-profile" readonly />
+                </div>
+                <hr />
+                <h4 class="text-primary">Totals</h4>
+                <div id="pr-totals-section"></div>
+                <hr/>
+                <div class="form-group">
+                    <label><strong>Difference:</strong></label>
+                    <input type="text" class="form-control text-right" id="pr-difference" readonly />
+                </div>
+                <div class="pt-4">
+                    <button class="btn btn-primary btn-block" id="pr-submit">Submit</button>
+                </div>
             </div>
-            <hr />
-          <h4 class="text-primary">Totals</h4>
-          <div id="pr-totals-section"></div>
-          <hr/>
-          <div class="form-group">
-            <label><strong>Difference:</strong></label>
-            <input type="text" class="form-control text-right" id="pr-difference" readonly />
-          </div>
-          <div class="pt-4">
-            <button class="btn btn-primary btn-block" id="pr-submit">Submit</button>
-          </div>
         </div>
-      </div>
     </div>`;
 
     $(wrapper).find(".layout-main-section").html(html);
@@ -88,9 +90,8 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
                     customer_name = this.get_value();
                     $("#pr-customer-section").val(customer_name);
 
-                    frappe.db.get_value("Customer", customer_name, ["customer_name", "mobile_no"]).then(r => {
+                    frappe.db.get_value("Customer", customer_name, "customer_name").then(r => {
                         mpesa_search_name = r.message.customer_name || "";
-                        mpesa_search_mobile = r.message.mobile_no || "";
                         get_outstanding_invoices();
                         get_draft_mpesa_payments_register();
                     });
@@ -463,18 +464,18 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
             if (!selected_invoices.includes(invoice)) selected_invoices.push(invoice);
             if (window.pr_customer_control && window.pr_customer_control.set_value) {
                 window.pr_customer_control.set_value(invoice.customer);
+                customer_name = invoice.customer;
+                frappe.db.get_doc("Customer", customer_name).then(customer_doc => {
+                    let first_name = customer_doc.customer_name.split(" ")[0];
+                    $("#pr-mpesa-name").val(first_name);
+
+                });
             } else {
                 $("#pr-customer-section input").val(invoice.customer);
             }
-            customer_name = invoice.customer;
-
-            // Filter invoices and mpesa payments by customer
-            $("#pr-customer-section").val(invoice.customer);
-            mpesa_search_name = invoice.customer_name || "";
-            // mpesa_search_mobile = invoice.mobile_no || "";
 
             get_outstanding_invoices();
-            // get_draft_mpesa_payments_register();
+            get_draft_mpesa_payments_register();
         } else {
             selected_invoices = selected_invoices.filter(i => i !== invoice);
             updateTotals();
@@ -483,13 +484,13 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
 
     //Event Handlers
     $(document).on("click", "#pr-search-invoices", function () {
-        customer_name = $("#pr-customer-section").val();
+        customer_name = "";
+        console.log("Searching invoices for customer:", customer_name);
         get_outstanding_invoices();
     });
 
     $(document).on("click", "#pr-search-mpesa", function () {
         mpesa_search_name = $("#pr-mpesa-name").val();
-        // mpesa_search_mobile = $("#pr-mpesa-mobile").val();
         get_draft_mpesa_payments_register();
     });
 
@@ -533,7 +534,6 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
                 }
                 if (this.id === "pr-mpesa-name") {
                     mpesa_search_name = $("#pr-mpesa-name").val();
-                    // mpesa_search_mobile = $("#pr-mpesa-mobile").val();
                     get_draft_mpesa_payments_register();
                 }
             }
@@ -546,9 +546,8 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
                     customer_name = "";
                     get_outstanding_invoices();
                 }
-                if (this.id === "pr-mpesa-name" || this.id === "pr-mpesa-mobile") {
+                if (this.id === "pr-mpesa-name") {
                     mpesa_search_name = $("#pr-mpesa-name").val();
-                    // mpesa_search_mobile = $("#pr-mpesa-mobile").val();
                     get_draft_mpesa_payments_register();
                 }
             }
