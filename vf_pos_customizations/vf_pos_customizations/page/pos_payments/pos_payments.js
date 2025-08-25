@@ -25,9 +25,6 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
               <div class="col-md-4 col-12">
                 <input type="text" class="form-control" id="pr-mpesa-name" placeholder="Search by Name" />
               </div>
-              <div class="col-md-4 col-12">
-                <input type="text" class="form-control" id="pr-mpesa-mobile" placeholder="Search by Mobile" />
-              </div>
               <div class="col-md-3 col-12">
                 <button class="btn" style="background: #00BDF0; color: #fff;" id="pr-search-mpesa">Search</button>
               </div>
@@ -249,13 +246,6 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
         $("#pr-totals-section").html(html);
         $("#pr-difference").val(formtCurrency(diff));
     }
-
-    $(document).off("change", ".pr-payment-method-select").on("change", ".pr-payment-method-select", function () {
-        let idx = $(this).data("idx");
-        let val = $(this).val();
-        payment_methods[idx].mode_of_payment = val;
-        renderTotalsSection();
-    });
 
 	function check_opening_entry() {
         fetch_opening_entry().then((r) => {
@@ -479,8 +469,8 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
             customer_name = invoice.customer;
 
             // Filter invoices and mpesa payments by customer
-            // $("#pr-customer-section").val(invoice.customer);
-            // mpesa_search_name = invoice.customer_name || "";
+            $("#pr-customer-section").val(invoice.customer);
+            mpesa_search_name = invoice.customer_name || "";
             // mpesa_search_mobile = invoice.mobile_no || "";
 
             get_outstanding_invoices();
@@ -499,7 +489,7 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
 
     $(document).on("click", "#pr-search-mpesa", function () {
         mpesa_search_name = $("#pr-mpesa-name").val();
-        mpesa_search_mobile = $("#pr-mpesa-mobile").val();
+        // mpesa_search_mobile = $("#pr-mpesa-mobile").val();
         get_draft_mpesa_payments_register();
     });
 
@@ -534,23 +524,23 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
 
    
     //auto-search on enter or empty for all search fields
-    $(document).off("keydown", "#pr-customer-section, #pr-mpesa-name, #pr-mpesa-mobile")
-        .on("keydown", "#pr-customer-section, #pr-mpesa-name, #pr-mpesa-mobile", function (e) {
+    $(document).off("keydown", "#pr-customer-section, #pr-mpesa-name")
+        .on("keydown", "#pr-customer-section, #pr-mpesa-name", function (e) {
             if (e.key === "Enter") {
                 if (this.id === "pr-customer-section") {
                     customer_name = $(this).val();
                     get_outstanding_invoices();
                 }
-                if (this.id === "pr-mpesa-name" || this.id === "pr-mpesa-mobile") {
+                if (this.id === "pr-mpesa-name") {
                     mpesa_search_name = $("#pr-mpesa-name").val();
-                    mpesa_search_mobile = $("#pr-mpesa-mobile").val();
+                    // mpesa_search_mobile = $("#pr-mpesa-mobile").val();
                     get_draft_mpesa_payments_register();
                 }
             }
         });
 
-    $(document).off("input", "#pr-customer-section, #pr-mpesa-name, #pr-mpesa-mobile")
-        .on("input", "#pr-customer-section, #pr-mpesa-name, #pr-mpesa-mobile", function () {
+    $(document).off("input", "#pr-customer-section, #pr-mpesa-name")
+        .on("input", "#pr-customer-section, #pr-mpesa-name", function () {
             if ($(this).val() === "") {
                 if (this.id === "pr-customer-section") {
                     customer_name = "";
@@ -558,7 +548,7 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
                 }
                 if (this.id === "pr-mpesa-name" || this.id === "pr-mpesa-mobile") {
                     mpesa_search_name = $("#pr-mpesa-name").val();
-                    mpesa_search_mobile = $("#pr-mpesa-mobile").val();
+                    // mpesa_search_mobile = $("#pr-mpesa-mobile").val();
                     get_draft_mpesa_payments_register();
                 }
             }

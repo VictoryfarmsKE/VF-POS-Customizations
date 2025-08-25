@@ -2,6 +2,7 @@ import frappe
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 from frappe.utils import now_datetime, nowdate, nowtime
 from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import make_closing_entry_from_opening
+import math
 
 @frappe.whitelist()
 def get_past_order_list(search_term, status, pos_profile, limit=20):
@@ -56,48 +57,6 @@ def create_payment_request(self):
 				pay_req.request_phone_payment()
 
 			return pay_req
-
-def get_new_payment_request(doc, mop):
-    payment_gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {
-            "payment_account": mop.get("account"),
-        },
-        ["name"],
-    )
-
-    args = {
-        "dt": "Sales Invoice",
-        "dn": doc.get("name"),
-        "recipient_id": doc.get("contact_mobile"),
-        "mode_of_payment": mop.get("mode_of_payment"),
-        "payment_gateway_account": payment_gateway_account,
-        "payment_request_type": "Inward",
-        "party_type": "Customer",
-        "party": doc.get("customer"),
-        "return_doc": True,
-    }
-    return make_payment_request(**args)
-
-def get_existing_payment_request(doc, pay):
-    payment_gateway_account = frappe.db.get_value(
-        "Payment Gateway Account",
-        {
-            "payment_account": pay.get("account"),
-        },
-        ["name"],
-    )
-
-    args = {
-        "doctype": "Payment Request",
-        "reference_doctype": "Sales Invoice",
-        "reference_name": doc.get("name"),
-        "payment_gateway_account": payment_gateway_account,
-        "email_to": doc.get("contact_mobile"),
-    }
-    pr = frappe.db.exists(args)
-    if pr:
-        return frappe.get_doc("Payment Request", pr)
 
 def auto_close_open_nrb_pos():
     frappe.log_error("Auto-closing open Nairobi POS sessions")
