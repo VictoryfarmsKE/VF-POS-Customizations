@@ -59,7 +59,7 @@ page_js = {
     "point-of-sale": [
         "public/js/pos_controller.js",
         "public/js/pos_past_order_list.js",
-        "public/js/pos_payment.js",
+        "public/js/pos_payment.js"
     ]
 }
 # include js in doctype views
