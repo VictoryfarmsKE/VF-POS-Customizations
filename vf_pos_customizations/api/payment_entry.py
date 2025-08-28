@@ -37,7 +37,6 @@ def get_bank_cash_account(company, mode_of_payment, bank_account=None):
 
     return bank
 
-
 def set_paid_amount_and_received_amount(
     party_account_currency,
     bank,
@@ -80,7 +79,6 @@ def set_paid_amount_and_received_amount(
             paid_amount = received_amount * conversion_rate
 
     return paid_amount, received_amount
-
 
 @frappe.whitelist()
 def get_outstanding_invoices(company, currency, customer=None, pos_profile=None):
