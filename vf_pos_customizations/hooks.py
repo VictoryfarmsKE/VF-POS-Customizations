@@ -153,9 +153,7 @@ page_js = {
 # override_doctype_class = {
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
-override_doctype_class = {
-    "POS Invoice": "vf_pos_customizations.vf_pos_customizations.customization.pos_invoice.pos_invoice.CustomPOSInvoice"
-}
+
 # Document Events (to use)
 # ---------------
 # Hook on document methods and events
