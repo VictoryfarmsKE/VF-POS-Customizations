@@ -41,7 +41,7 @@ frappe.after_ajax(() => {
             };
             clearInterval(interval);
         } else if (retries > 20) {
-            console.warn("POS Payment not loaded, override failed.");
+            // console.warn("POS Payment not loaded, override failed.");
             clearInterval(interval);
         }
         retries++;

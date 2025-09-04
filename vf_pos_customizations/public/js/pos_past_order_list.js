@@ -222,7 +222,7 @@ frappe.after_ajax(() => {
 
             clearInterval(interval);
         } else if (retries > 20) {
-            console.warn("POS Past Order List not loaded, override failed.");
+            // console.warn("POS Past Order List not loaded, override failed.");
             clearInterval(interval);
         }
         retries++;

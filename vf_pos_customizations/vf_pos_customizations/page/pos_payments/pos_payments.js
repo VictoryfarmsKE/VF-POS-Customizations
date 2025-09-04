@@ -195,7 +195,6 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
                     <th></th>
                     <th>Payment ID</th>
                     <th>Full Name</th>
-                    <th>Mobile Number</th>
                     <th>Date</th>
                     <th>Amount</th>
                 </tr>
@@ -206,7 +205,6 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
                 <td><input type="checkbox" class="pr-mpesa-select" data-idx="${start + idx}" ${selected_mpesa_payments.includes(mp) ? "checked" : ""}></td>
                 <td>${mp.transid}</td>
                 <td>${mp.full_name}</td>
-                <td>${mp.mobile_no}</td>
                 <td>${mp.posting_date}</td>
                 <td class="text-primary">${currencySymbol(mp.currency)}${formtCurrency(mp.amount)}</td>
             </tr>`;
