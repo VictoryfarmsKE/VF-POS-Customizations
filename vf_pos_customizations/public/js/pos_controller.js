@@ -37,12 +37,7 @@ frappe.after_ajax(() => {
                     () => this.item_details.toggle_component(false),
                     () => this.cart.toggle_component(true),
                     () => frappe.dom.unfreeze(),
-                ]).then(() => {
-                    frappe.show_alert({
-                        message: __('New invoice created'),
-                        indicator: 'green'
-                    });
-                });
+                ])
             };
 
             clearInterval(interval);
