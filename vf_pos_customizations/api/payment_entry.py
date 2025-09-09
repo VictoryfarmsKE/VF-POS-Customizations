@@ -157,7 +157,6 @@ def get_unallocated_payments(customer, company, currency, mode_of_payment=None):
         order_by="posting_date asc",
     )
     return unallocated_payment
-
 @frappe.whitelist()
 def process_pos_payment(payload):
     data = json.loads(payload)
@@ -273,7 +272,20 @@ def process_pos_payment(payload):
                     invoice_doc.run_method("calculate_taxes_and_totals")
                     
                     invoice_doc.save(ignore_permissions=True)
-                
+                    
+                    # Validation: Do not submit if change amount > 1
+                    if change_amount > 1:
+                        errors.append(f"Invoice {invoice_doc.name} not submitted: Change amount ({change_amount:.2f}) is greater than 1.")
+                        processed_invoices.append({
+                            "name": invoice_doc.name,
+                            "total_paid": total_paid,
+                            "grand_total": grand_total,
+                            "change_amount": change_amount,
+                            "is_pos": 0,
+                            "status": "Not Submitted"
+                        })
+                        continue
+
                     if invoice_doc.docstatus == 0:
                         invoice_doc.submit()
                     

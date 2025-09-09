@@ -1,4 +1,6 @@
 frappe.pages["pos-payments"].on_page_load = function (wrapper) {
+    //add breadcrumb next to title that navigates to pos-payments
+    frappe.breadcrumbs.add("POS", "point-of-sale");
     frappe.ui.make_app_page({
         parent: wrapper,
         title: __("Payment Reconciliation"),
