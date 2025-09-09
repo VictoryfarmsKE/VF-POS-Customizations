@@ -337,7 +337,7 @@ def _generate_pos_payment_result_message(processed_invoices, selected_mpesa_paym
     if selected_mpesa_payments:
         msg += "<h4>M-Pesa Payments Applied</h4>"
         msg += "<table class='table table-bordered'>"
-        msg += "<thead><tr><th>Transaction ID</th><th>Mode of Payment</th><th>Amount</th><th>Mobile</th></tr></thead><tbody>"
+        msg += "<thead><tr><th>Transaction ID</th><th>Mode of Payment</th><th>Amount</th></tr></thead><tbody>"
         for mpesa in selected_mpesa_payments:
             msg += f"<tr><td>{mpesa.get('transid')}</td><td>{mpesa.get('mode_of_payment')}</td><td>{mpesa.get('amount')}</td><td>{mpesa.get('mobile_no')}</td></tr>"
         msg += "</tbody></table>"
