@@ -289,13 +289,13 @@ def process_pos_payment(payload):
                     if invoice_doc.docstatus == 0:
                         invoice_doc.submit()
                     
-                    # Submit M-Pesa payments if they exist
-                    if data.get('selected_mpesa_payments'):
-                        for mpesa_payment in data.selected_mpesa_payments:
-                            try:
-                                submit_mpesa_payment(mpesa_payment.get("name"), customer)
-                            except Exception as e:
-                                errors.append(f"Error submitting M-Pesa payment {mpesa_payment.get('name')}: {str(e)}")
+                    # # Submit M-Pesa payments if they exist
+                    # if data.get('selected_mpesa_payments'):
+                    #     for mpesa_payment in data.selected_mpesa_payments:
+                    #         try:
+                    #             submit_mpesa_payment(mpesa_payment.get("name"), customer)
+                    #         except Exception as e:
+                    #             errors.append(f"Error submitting M-Pesa payment {mpesa_payment.get('name')}: {str(e)}")
                     
                     processed_invoices.append({
                         "name": invoice_doc.name,

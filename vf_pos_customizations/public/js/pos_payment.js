@@ -17,8 +17,7 @@ frappe.after_ajax(() => {
                 if (!$parent || !$parent.length) {
                     $parent = $(".invoice_fields_section");
                 } else {
-                    // console.log("invoice_fields_section found:", $parent);
-                    return $parent;
+                    console.log("invoice_fields_section found:", $parent);
                 }
 
                 // Add Pezesha buttons if not present
