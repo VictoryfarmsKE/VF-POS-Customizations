@@ -157,6 +157,7 @@ def get_unallocated_payments(customer, company, currency, mode_of_payment=None):
         order_by="posting_date asc",
     )
     return unallocated_payment
+
 @frappe.whitelist()
 def process_pos_payment(payload):
     data = json.loads(payload)

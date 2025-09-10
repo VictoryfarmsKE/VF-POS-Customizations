@@ -18,64 +18,6 @@ def get_token(app_key: str, app_secret: str, base_url: str) -> str:
     return response.json().get("access_token", "")
 
 
-@frappe.whitelist()
-def register_c2b_urls(
-    shortcode: str,
-    app_key: str,
-    app_secret: str,
-    base_url: str,
-    validation_url: str,
-    confirmation_url: str,
-    response_type: str = "Completed"
-):
-    """
-    Register or overwrite C2B URLs with Safaricom.
-    Logs both request and response together in a single Error Log.
-    """
-    try:
-        # get OAuth token
-        token = get_token(app_key, app_secret, base_url)
-
-        # endpoint
-        register_url = f"{base_url}/mpesa/c2b/v1/registerurl"
-
-        # request payload
-        payload = {
-            "ShortCode": shortcode,
-            "ResponseType": response_type,
-            "ConfirmationURL": confirmation_url,
-            "ValidationURL": validation_url,
-        }
-
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        }
-
-        # send request
-        r = requests.post(register_url, json=payload, headers=headers, timeout=30)
-        r.raise_for_status()
-
-        # build combined log
-        log_message = f"""
-            M-PESA C2B Registration Attempt
-
-            ▶️ Request:
-            {json.dumps(payload, indent=2)}
-
-            ▶️ Response:
-            {r.text}
-            """
-
-        frappe.log_error(log_message, "M-PESA C2B Registration")
-
-        return r.json()
-
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), f"M-Pesa C2B URL Registration Error: {str(e)[:140]}")
-        return {"error": str(e)}
-
-
 @frappe.whitelist(allow_guest=True)
 def confirmation(**kwargs) -> Dict[str, Any]:
     """
