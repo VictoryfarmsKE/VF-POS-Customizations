@@ -25,7 +25,7 @@ class MpesaPaymentRegister(Document):
             "Mpesa C2B Register URL",
             filters={
                 "business_shortcode": self.businessshortcode,
-                "register_status": "Success",
+                # "register_status": "Success",
             },
             fields=["company", "mode_of_payment"],
         )
