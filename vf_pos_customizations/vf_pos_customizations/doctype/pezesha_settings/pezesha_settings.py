@@ -36,7 +36,13 @@ class PezeshaSettings(Document):
 
 
 @frappe.whitelist()
-def pezesha_loan_offer(customer, pos_profile):
+def pezesha_loan_offer(customer=None, pos_profile=None):
+	if not customer or not pos_profile:
+		user = frappe.session.user
+		pos_opening = frappe.db.get_value("POS Opening Entry", {"user": user, "status": "Open"}, "pos_profile")
+		pos_profile = pos_profile or pos_opening
+		customer = customer or frappe.db.get_value("POS Invoice", {"owner": user, "docstatus": 0}, "customer")
+
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
 	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/options'
@@ -53,7 +59,6 @@ def pezesha_loan_offer(customer, pos_profile):
 	if response.status_code == 200:
 		try:
 			dt = response.json()
-			ddt = dt['data']
 			return dt
 		except KeyError:
 			frappe.msgprint("You already have a pending loan. Cannot apply for new loan until current one is cleared")
@@ -87,7 +92,13 @@ def pezesha_loan_application(data, pos_profile):
 	return response.json()
 
 @frappe.whitelist()
-def pezesha_loan_status(customer, pos_profile):
+def pezesha_loan_status(customer=None, pos_profile=None):
+	if not customer or not pos_profile:
+		user = frappe.session.user
+		pos_opening = frappe.db.get_value("POS Opening Entry", {"user": user, "status": "Open"}, "pos_profile")
+		pos_profile = pos_profile or pos_opening
+		customer = customer or frappe.db.get_value("POS Invoice", {"owner": user, "docstatus": 0}, "customer")
+
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
 	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/latest'

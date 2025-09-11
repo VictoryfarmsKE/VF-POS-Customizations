@@ -86,9 +86,7 @@ def auto_close_open_nrb_pos():
 
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), f"Auto Nairobi POS Close Failed: {entry.name}")
-            
-
-
+ 
 def auto_close_open_western_pos():
     frappe.log_error("Auto-closing open Western POS sessions")
     #find POS Profiles where the POS Profile field custom_region = "Western Region"
@@ -118,7 +116,6 @@ def auto_close_open_western_pos():
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), f"Auto Western POS Close Failed: {entry.name}")
             
-
 def auto_close_open_msa_pos():
     frappe.log_error("Auto-closing open Mombasa POS sessions")
     #find POS Profiles where the POS Profile field custom_region = "Mombasa Region"
