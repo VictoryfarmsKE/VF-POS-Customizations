@@ -363,7 +363,7 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
 						action() {
 							window.location.reload();
 						},
-					},
+					},s
 				});
 			}
 		});
@@ -398,7 +398,7 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
 
     function get_draft_mpesa_payments_register() {
         mpesa_page = 1;
-        frappe.call("vf_pos_customizations.api.mpesa.get_mpesa_draft_payments", {
+        frappe.call("vf_pos_customizations.api.m_pesa.get_mpesa_draft_payments", {
             company: "Victory Farms Ltd",
             mode_of_payment: null,
             full_name: mpesa_search_name || null,
