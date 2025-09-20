@@ -65,10 +65,17 @@ def pezesha_loan_offer(customer=None, pos_profile=None):
 			return "You already have a pending loan. Cannot apply for new loan until current one is cleared"
 	else:
 		frappe.msgprint(f"Unable To Find Borrower <b>{customer}</b>")
-		return response.status_code
+	return response.status_code
 
 @frappe.whitelist()
-def pezesha_loan_application(data, pos_profile):
+def pezesha_loan_application(data, pos_profile=None):
+	if not pos_profile:
+		user = frappe.session.user
+		pos_opening = frappe.db.get_value("POS Opening Entry", {"user": user, "status": "Open"}, "pos_profile")
+		pos_profile = pos_profile or pos_opening
+		customer = None
+		customer = customer or frappe.db.get_value("POS Invoice", {"owner": user, "docstatus": 0}, "customer")
+  
 	res = json.loads(data)
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
@@ -80,7 +87,7 @@ def pezesha_loan_application(data, pos_profile):
 	}
 	data = {
 		'channel': pos.custom_pezesha_channel_id,
-		'pezesha_id': res.get('pezesha_customer_id'),
+		'pezesha_id': customer,
 		'amount': res.get('amount'),
 		'duration': res.get('duration'),
 		'interest': res.get('interest'),
@@ -100,6 +107,7 @@ def pezesha_loan_status(customer=None, pos_profile=None):
 		customer = customer or frappe.db.get_value("POS Invoice", {"owner": user, "docstatus": 0}, "customer")
 
 	pos = frappe.get_doc("POS Profile", pos_profile)
+ 
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
 	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/latest'
 	headers = {
@@ -112,18 +120,21 @@ def pezesha_loan_status(customer=None, pos_profile=None):
 		'identifier': customer
 	}
 	response = requests.post(url, headers=headers, data=data)
-	if response.status_code == 200:
-		try:
-			dt = response.json()
-			ddt = dt['data']
-			amt = ddt['loan_amount']
-			return ddt
-		except KeyError:
-			frappe.msgprint("Please Make a Loan Application")
-			return "Please Make a Loan Application"
-	else:
-		frappe.msgprint("Please Make a Loan Application")
-		return response.status_code
+	frappe.msgprint(response.json().get('message', 'No message from Pezesha'))
+	return response.json().get('message', 'No message from Pezesha')
+	# if response.status_code == 200:
+	# 	try:
+	# 		dt = response.json()
+	# 		ddt = dt['data']
+	# 		return ddt
+	# 	except KeyError:
+	# 		#log reponse for debugging
+	# 		frappe.log_error(f"Response from Pezesha: {response.text}", "Pezesha Loan Status KeyError")
+	# 		frappe.msgprint("Please Make a Loan Application")
+	# 		return "Please Make a Loan Application"
+	# else:
+	# 	frappe.msgprint("Please Make a Loan Application")
+	# 	return response.status_code
 		
 def corn():
 	doc = frappe.get_doc('Pezesha Settings')
