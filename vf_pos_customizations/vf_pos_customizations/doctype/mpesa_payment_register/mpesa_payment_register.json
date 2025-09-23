@@ -7,6 +7,7 @@
  "engine": "InnoDB",
  "field_order": [
   "section_break_mfw7",
+  "payment_type",
   "full_name",
   "transactiontype",
   "transid",
@@ -18,9 +19,17 @@
   "orgaccountbalance",
   "thirdpartytransid",
   "msisdn",
+  "column_break_payment_details",
   "firstname",
   "middlename",
   "lastname",
+  "section_break_b2b",
+  "sender_business_name",
+  "sender_shortcode",
+  "sender_till_number",
+  "column_break_b2b",
+  "business_contact",
+  "authorized_person",
   "column_break_14",
   "posting_date",
   "posting_time",
@@ -36,7 +45,19 @@
  "fields": [
   {
    "fieldname": "section_break_mfw7",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Payment Information"
+  },
+  {
+   "default": "C2B",
+   "fieldname": "payment_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Payment Type",
+   "no_copy": 1,
+   "options": "C2B\nB2B",
+   "read_only": 1
   },
   {
    "fieldname": "full_name",
@@ -127,6 +148,11 @@
    "read_only": 1
   },
   {
+   "fieldname": "column_break_payment_details",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.payment_type == 'C2B'",
    "fieldname": "firstname",
    "fieldtype": "Data",
    "in_preview": 1,
@@ -136,6 +162,7 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.payment_type == 'C2B'",
    "fieldname": "middlename",
    "fieldtype": "Data",
    "label": "Middle Name",
@@ -143,11 +170,67 @@
    "read_only": 1
   },
   {
+   "depends_on": "eval:doc.payment_type == 'C2B'",
    "fieldname": "lastname",
    "fieldtype": "Data",
    "in_preview": 1,
    "in_standard_filter": 1,
    "label": "Last Name",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.payment_type == 'B2B'",
+   "fieldname": "section_break_b2b",
+   "fieldtype": "Section Break",
+   "label": "B2B Payment Details"
+  },
+  {
+   "depends_on": "eval:doc.payment_type == 'B2B'",
+   "fieldname": "sender_business_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Sender Business Name",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.payment_type == 'B2B'",
+   "fieldname": "sender_shortcode",
+   "fieldtype": "Data",
+   "label": "Sender Short Code",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.payment_type == 'B2B'",
+   "fieldname": "sender_till_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Sender Till Number",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.payment_type == 'B2B'",
+   "fieldname": "column_break_b2b",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.payment_type == 'B2B'",
+   "fieldname": "business_contact",
+   "fieldtype": "Data",
+   "label": "Business Contact",
+   "no_copy": 1,
+   "options": "Phone",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.payment_type == 'B2B'",
+   "fieldname": "authorized_person",
+   "fieldtype": "Data",
+   "label": "Authorized Person",
    "no_copy": 1,
    "read_only": 1
   },
@@ -237,7 +320,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-08-08 17:40:59.500446",
+ "modified": "2025-09-23 17:40:59.500446",
  "modified_by": "christinek@victoryfarmskenya.com",
  "module": "VF POS Customizations",
  "name": "Mpesa Payment Register",
