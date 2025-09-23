@@ -59,6 +59,7 @@ def confirmation(**kwargs) -> Dict[str, Any]:
         if is_b2b_payment:
             # Handle as B2B payment
             doc.payment_type = "B2B"
+            doc.firstname = args.get("SenderName") or args.get("SenderBusinessName")
             doc.sender_business_name = args.get("SenderName") or args.get("SenderBusinessName")
             doc.sender_shortcode = args.get("SenderShortCode")
             doc.sender_till_number = args.get("SenderTillNumber") or args.get("PartyA")
@@ -106,7 +107,6 @@ def get_mpesa_mode_of_payment(company: str) -> List[str]:
         filters={"company": company, "register_status": "Success"},
         fields=["mode_of_payment"],
     )
-    # Use set comprehension for uniqueness
     return list({mode.mode_of_payment for mode in modes if mode.mode_of_payment})
 
 
@@ -132,7 +132,6 @@ def get_mpesa_draft_payments(
     if mobile_no:
         filters["msisdn"] = ["like", f"%{mobile_no}%"]
     if full_name:
-        # Search in both individual names and business names
         filters_or = [
             {"full_name": ["like", f"%{full_name}%"]},
             {"sender_business_name": ["like", f"%{full_name}%"]}
