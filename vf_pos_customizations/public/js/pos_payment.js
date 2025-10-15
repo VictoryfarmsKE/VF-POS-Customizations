@@ -119,8 +119,8 @@ frappe.after_ajax(() => {
                     dialogtitle = "Authorization Error";
                     dialogMessage = "Invalid API credentials. Please check Pezesha settings.";
                 } else {
-                    dialogtitle = "Service Unavailable";
-                    dialogMessage = "Pezesha service is currently unavailable. Please try again later.";
+                    dialogtitle = "Pezesha Response";
+                    dialogMessage = response.message || "Unable to retrieve loan offers. Please try again later.";
                 }
                 
                 this.pezesha_data.dialogtitle = dialogtitle;
