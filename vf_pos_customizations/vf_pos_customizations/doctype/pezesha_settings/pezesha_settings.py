@@ -85,14 +85,44 @@ def pezesha_loan_application(data, pos_profile=None):
 		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
 		'Accept-Encoding': 'gzip, deflate'
 	}
+	# Extract and validate loan payload
+	amount = res.get('amount')
+	duration = res.get('duration')
+	interest = res.get('interest')
+	rate = res.get('rate')
+	fee = res.get('fee')
+
+	try:
+		amount_val = float(amount)
+	except Exception:
+		amount_val = None
+
+	try:
+		duration_val = int(duration)
+	except Exception:
+		duration_val = None
+
+	# Enforce product constraints server-side for safety
+	MAX_CAP = 200000
+	MIN_14_DAY = 50000
+
+	if amount_val is None or amount_val <= 0:
+		return {"status": 400, "message": "Invalid loan amount."}
+	if duration_val not in (7, 14):
+		return {"status": 400, "message": "Invalid loan duration. Allowed values are 7 or 14 days."}
+	if amount_val > MAX_CAP:
+		return {"status": 400, "message": f"Amount exceeds the maximum limit of {MAX_CAP:,} KSH."}
+	if duration_val == 14 and amount_val < MIN_14_DAY:
+		return {"status": 400, "message": f"Minimum amount for 14-day product is {MIN_14_DAY:,} KSH."}
+
 	data = {
 		'channel': pos.custom_pezesha_channel_id,
 		'pezesha_id': customer,
-		'amount': res.get('amount'),
-		'duration': res.get('duration'),
-		'interest': res.get('interest'),
-		'rate': res.get('rate'),
-		'fee': res.get('fee')
+		'amount': amount_val,
+		'duration': duration_val,
+		'interest': interest,
+		'rate': rate,
+		'fee': fee
 	}
 
 	response = requests.post(url, headers=headers, data=data)

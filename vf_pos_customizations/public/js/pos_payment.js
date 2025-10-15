@@ -23,17 +23,16 @@ frappe.after_ajax(() => {
                     pezesha_customer_id: "",
                     pezesha_channel_id: "",
                     amount: 0,
+                    // base risk-based rate for the first 7 days (percent)
                     rate: 3.5,
                     interest: 0,
                     fee: 0,
                     duration: 0
                 },
-                loanOptions: {
-                    max_amount: 0,
-                    fee: 0,
-                    duration: 0,
-                    available_rate: 0
-                }
+                // Map of options keyed by duration (e.g., 7, 14)
+                loanOptionsByDuration: {},
+                // Convenience pointer to the currently selected option
+                selectedOption: null
             };
 
             Payment.prototype.openDialog = function() {
@@ -69,22 +68,40 @@ frappe.after_ajax(() => {
                             
                             if (responseData.status === 200 && responseData.data) {
                                 const dt = responseData.data;
-                                
-                                // Store loan options/limits for reference
-                                this.pezesha_data.loanOptions = {
-                                    max_amount: dt.amount,        // Maximum loan amount available
-                                    fee: dt.fee,                  // Processing fee
-                                    duration: dt.duration,       // Loan duration
-                                    available_rate: dt.rate      // Rate from API (but we'll use 3.5%)
-                                };
-                                
+
+                                // Normalize options: API may return a single object (7-day) or an array (7 and 14 days)
+                                const optionsArray = Array.isArray(dt) ? dt : [dt];
+
+                                // Build map keyed by duration for quick access
+                                const byDuration = {};
+                                optionsArray.forEach(opt => {
+                                    if (!opt) return;
+                                    const dur = Number(opt.duration) || 0;
+                                    if (!dur) return;
+                                    byDuration[dur] = {
+                                        duration: dur,
+                                        // max amount eligible for this borrower/product
+                                        max_amount: Number(opt.amount) || 0,
+                                        fee: Number(opt.fee) || 0,
+                                        // risk-based base rate for the first 7 days
+                                        available_rate: Number(opt.rate) || 3.5
+                                    };
+                                });
+
+                                this.pezesha_data.loanOptionsByDuration = byDuration;
+
                                 // Set form data for customer/channel
                                 this.pezesha_data.formData.pezesha_customer_id = this.customer;
                                 this.pezesha_data.formData.pezesha_channel_id = this.pos_profile;
-                                this.pezesha_data.formData.fee = dt.fee;
-                                this.pezesha_data.formData.duration = dt.duration;
-                                this.pezesha_data.formData.rate = 3.5; // Fixed 3.5% rate
-                                
+
+                                // Pick a sensible default option (prefer 7-day if present)
+                                this.pezesha_data.selectedOption = byDuration[7] || byDuration[14] || null;
+                                if (this.pezesha_data.selectedOption) {
+                                    this.pezesha_data.formData.fee = this.pezesha_data.selectedOption.fee;
+                                    this.pezesha_data.formData.duration = this.pezesha_data.selectedOption.duration;
+                                    this.pezesha_data.formData.rate = this.pezesha_data.selectedOption.available_rate || 3.5;
+                                }
+
                                 this.showLoanDialog();
                             } else {
                                 this.handleLoanOfferError(responseData);
@@ -119,9 +136,11 @@ frappe.after_ajax(() => {
                     dialogtitle = "Authorization Error";
                     dialogMessage = "Invalid API credentials. Please check Pezesha settings.";
                 } else {
-                    dialogtitle = "Service Unavailable";
-                    dialogMessage = "Pezesha service is currently unavailable. Please try again later.";
-                }
+                    //show response as is
+                    dialogtitle = "Pezesha Response";
+                    dialogMessage = response.message || "Unable to retrieve loan offers. Please try again later.";
+
+                   }
                 
                 this.pezesha_data.dialogtitle = dialogtitle;
                 this.pezesha_data.dialogMessage = dialogMessage;
@@ -130,9 +149,30 @@ frappe.after_ajax(() => {
 
             Payment.prototype.showLoanDialog = function() {
                 const formData = this.pezesha_data.formData;
-                const loanOptions = this.pezesha_data.loanOptions;
-                const fixedInterestRate = 3.5;
-                
+                const loanOptionsByDuration = this.pezesha_data.loanOptionsByDuration || {};
+                // risk-based base rate for first 7 days falls back to 3.5 if not provided
+                const defaultBaseRate = (this.pezesha_data.selectedOption && this.pezesha_data.selectedOption.available_rate) || 3.5;
+
+                // helper to get option by duration with graceful fallback
+                const getOption = (dur) => loanOptionsByDuration[dur] || null;
+                const option7 = getOption(7);
+                const option14 = getOption(14);
+
+                // Calculation helpers
+                const MIN_14_DAY_AMOUNT = 50000;
+                const MAX_14_DAY_AMOUNT = 200000; // mirrors existing merchant cap
+
+                const calculateInterest = (amount, duration, baseRatePercent) => {
+                    const baseInterest = (amount * (baseRatePercent || 0)) / 100;
+                    if (duration === 14) {
+                        const incrementalPerDay = 0.0032; // 0.32%
+                        const days_8_to_14 = 7; // full 14-day tenure
+                        const incrementalInterest = amount * incrementalPerDay * days_8_to_14;
+                        return baseInterest + incrementalInterest;
+                    }
+                    return baseInterest; // 7-day
+                };
+
                 const dialog = new frappe.ui.Dialog({
                     title: __('Pezesha Loan Application'),
                     fields: [
@@ -143,6 +183,16 @@ frappe.after_ajax(() => {
                             reqd: 1,
                             default: 0,
                             description: __('Enter the total invoice amount for the loan')
+                        },
+                        {
+                            fieldtype: 'Select',
+                            fieldname: 'loan_duration',
+                            label: __('Loan Duration'),
+                            // Initially show only 7-day if available; 14-day will appear once amount >= 50,000 and API option exists
+                            options: option7 ? ['7'] : [],
+                            default: (option7 ? '7' : ''),
+                            depends_on: 'eval: true',
+                            description: __('Choose 7 or 14 days (14-day requires at least Ksh 50,000 and eligibility)')
                         },
                         {
                             fieldtype: 'HTML',
@@ -159,6 +209,8 @@ frappe.after_ajax(() => {
                     primary_action_label: __('Submit Loan Application'),
                     primary_action: () => {
                         const loanAmount = dialog.get_value('invoice_total');
+                        const selectedDuration = Number(dialog.get_value('loan_duration')) || 7;
+                        const selectedOption = getOption(selectedDuration);
                         if (!loanAmount || loanAmount <= 0) {
                             frappe.msgprint({
                                 title: __('Invalid Amount'),
@@ -167,23 +219,56 @@ frappe.after_ajax(() => {
                             });
                             return;
                         }
-                        
-                        // Check if loan amount exceeds maximum allowed
-                        if (loanAmount > loanOptions.max_amount) {
+                        // Must have an eligible option for the selected duration
+                        if (!selectedOption) {
                             frappe.msgprint({
-                                title: __('Loan Amount Exceeds Limit'),
-                                message: __(`Invoice total (${format_currency(loanAmount)}) exceeds your maximum loan limit (${format_currency(loanOptions.max_amount)}). Please reduce your order amount.`),
+                                title: __('No Eligible Product'),
+                                message: __('Please enter a valid amount to view eligible loan durations.'),
                                 indicator: 'red'
                             });
                             return;
                         }
-                        
-                        const interestAmount = (loanAmount * fixedInterestRate) / 100;
+                        // Enforce 14-day minimum amount and cap
+                        if (selectedDuration === 14) {
+                            if (loanAmount < MIN_14_DAY_AMOUNT) {
+                                frappe.msgprint({
+                                    title: __('Amount Below Minimum for 14-day'),
+                                    message: __(`Minimum amount for 14-day product is ${format_currency(MIN_14_DAY_AMOUNT)}.`),
+                                    indicator: 'red'
+                                });
+                                return;
+                            }
+                            if (loanAmount > MAX_14_DAY_AMOUNT) {
+                                frappe.msgprint({
+                                    title: __('Amount Exceeds 14-day Cap'),
+                                    message: __(`Maximum amount for 14-day product is ${format_currency(MAX_14_DAY_AMOUNT)}.`),
+                                    indicator: 'red'
+                                });
+                                return;
+                            }
+                        }
+
+                        // Check if loan amount exceeds borrower's maximum allowed for selected product
+                        if (selectedOption && selectedOption.max_amount && loanAmount > selectedOption.max_amount) {
+                            frappe.msgprint({
+                                title: __('Loan Amount Exceeds Limit'),
+                                message: __(`Invoice total (${format_currency(loanAmount)}) exceeds your maximum loan limit (${format_currency(selectedOption.max_amount)}). Please reduce your order amount.`),
+                                indicator: 'red'
+                            });
+                            return;
+                        }
+                        const baseRate = (selectedOption && selectedOption.available_rate) || defaultBaseRate;
+                        const interestAmount = calculateInterest(loanAmount, selectedDuration, baseRate);
                         this.pezesha_data.formData.amount = loanAmount;
                         this.pezesha_data.formData.interest = interestAmount;
-                        this.pezesha_data.formData.rate = fixedInterestRate;
-                        
-                        this.submitForm(dialog, loanAmount);
+                        this.pezesha_data.formData.rate = baseRate;
+                        this.pezesha_data.formData.duration = selectedDuration;
+                        // set fee per selected product if available
+                        if (selectedOption) {
+                            this.pezesha_data.formData.fee = selectedOption.fee || 0;
+                        }
+
+                        this.submitForm(dialog, loanAmount, selectedDuration, selectedOption);
                     },
                     secondary_action_label: __('Cancel'),
                     secondary_action: () => {
@@ -191,38 +276,99 @@ frappe.after_ajax(() => {
                     }
                 });
                 
-                // Add real-time calculation update when amount changes
-                dialog.fields_dict.invoice_total.$input.on('input', function() {
-                    const loanAmount = parseFloat($(this).val()) || 0;
-                    if (loanAmount > 0) {
-                        const interestAmount = (loanAmount * fixedInterestRate) / 100;
-                        const totalRepayment = loanAmount + interestAmount + formData.fee;
-                        
-                        let maxAmountWarning = '';
-                        if (loanAmount > loanOptions.max_amount) {
-                            maxAmountWarning = `<div class="alert alert-warning"><strong>Warning:</strong> Amount exceeds your loan limit of ${format_currency(loanOptions.max_amount)}</div>`;
-                        }
-                        
-                        $('#loan-calculation-display').html(`
-                            ${maxAmountWarning}
-                            <table class="table table-bordered">
-                                <tr><td><strong>Maximum Loan Available:</strong></td><td>${format_currency(loanOptions.max_amount)}</td></tr>
-                                <tr><td><strong>Loan Amount (Invoice Total):</strong></td><td><strong>${format_currency(loanAmount)}</strong></td></tr>
-                                <tr><td><strong>Interest Rate:</strong></td><td>${fixedInterestRate}% (Fixed)</td></tr>
-                                <tr><td><strong>Interest Amount:</strong></td><td>${format_currency(interestAmount)}</td></tr>
-                                <tr><td><strong>Processing Fee:</strong></td><td>${format_currency(formData.fee)}</td></tr>
-                                <tr><td><strong>Loan Duration:</strong></td><td>${loanOptions.duration} days</td></tr>
-                                <tr class="table-success"><td><strong>Total Repayment:</strong></td><td><strong>${format_currency(totalRepayment)}</strong></td></tr>
-                            </table>
-                        `);
-                    } else {
-                        $('#loan-calculation-display').html('<p class="text-muted">Enter invoice total above to see loan calculations</p>');
+                // Utility to refresh duration choices based on amount and eligibility
+                const refreshDurationOptions = (amount) => {
+                    // Determine availability from API response and amount threshold
+                    const eligibleFor14 = !!option14 && amount >= MIN_14_DAY_AMOUNT;
+                    const eligibleFor7 = !!option7;
+                    let options = [];
+                    if (eligibleFor7) options.push('7');
+                    if (eligibleFor14) options.push('14');
+
+                    const durationField = dialog.get_field('loan_duration');
+                    if (durationField) {
+                        durationField.df.options = options;
+                        // Reset default if current value not in options
+                        const current = String(dialog.get_value('loan_duration') || '');
+                        const nextDefault = options.includes(current) ? current : (options[0] || '7');
+                        durationField.set_value(nextDefault);
+                        durationField.refresh();
                     }
+                };
+
+                // Common renderer for calculation summary
+                const renderSummary = () => {
+                    const loanAmount = parseFloat(dialog.get_value('invoice_total')) || 0;
+                    const selectedDuration = Number(dialog.get_value('loan_duration')) || 7;
+                    const selectedOption = getOption(selectedDuration);
+                    const baseRate = (selectedOption && selectedOption.available_rate) || defaultBaseRate;
+                    const fee = (selectedOption && selectedOption.fee) || formData.fee || 0;
+                    const maxBorrowerAmount = (selectedOption && selectedOption.max_amount) || 0;
+
+                    if (!loanAmount) {
+                        $('#loan-calculation-display').html('<p class="text-muted">Enter invoice total above to see loan calculations</p>');
+                        return;
+                    }
+
+                    if (!selectedOption) {
+                        $('#loan-calculation-display').html('<div class="alert alert-info">Enter at least Ksh 50,000 to view the 14-day option, or ensure a 7-day option is available.</div>');
+                        return;
+                    }
+
+                    const interestAmount = calculateInterest(loanAmount, selectedDuration, baseRate);
+                    const totalRepayment = loanAmount + interestAmount + fee;
+
+                    let warnings = '';
+                    if (selectedDuration === 14) {
+                        if (loanAmount < MIN_14_DAY_AMOUNT) {
+                            warnings += `<div class="alert alert-warning"><strong>Warning:</strong> Minimum for 14-day is ${format_currency(MIN_14_DAY_AMOUNT)}</div>`;
+                        }
+                        if (loanAmount > MAX_14_DAY_AMOUNT) {
+                            warnings += `<div class="alert alert-warning"><strong>Warning:</strong> Maximum for 14-day is ${format_currency(MAX_14_DAY_AMOUNT)}</div>`;
+                        }
+                    }
+                    if (maxBorrowerAmount && loanAmount > maxBorrowerAmount) {
+                        warnings += `<div class="alert alert-warning"><strong>Warning:</strong> Amount exceeds your loan limit of ${format_currency(maxBorrowerAmount)}</div>`;
+                    }
+
+                    const incrementalPerDayPercent = 0.32; // for display
+                    const incrementalDays = selectedDuration === 14 ? 7 : 0;
+                    const incrementalBlock = selectedDuration === 14
+                        ? `<tr><td><strong>Incremental (0.32% x ${incrementalDays} days):</strong></td><td>${format_currency(loanAmount * 0.0032 * incrementalDays)}</td></tr>`
+                        : '';
+
+                    $('#loan-calculation-display').html(`
+                        ${warnings}
+                        <table class="table table-bordered">
+                            <tr><td><strong>Duration:</strong></td><td>${selectedDuration} days</td></tr>
+                            <tr><td><strong>Maximum Loan Available:</strong></td><td>${format_currency(maxBorrowerAmount)}</td></tr>
+                            <tr><td><strong>Loan Amount (Invoice Total):</strong></td><td><strong>${format_currency(loanAmount)}</strong></td></tr>
+                            <tr><td><strong>Base Rate (first 7 days):</strong></td><td>${baseRate}%</td></tr>
+                            ${incrementalBlock}
+                            <tr><td><strong>Interest Amount:</strong></td><td>${format_currency(interestAmount)}</td></tr>
+                            <tr><td><strong>Processing Fee:</strong></td><td>${format_currency(fee)}</td></tr>
+                            <tr class="table-success"><td><strong>Total Repayment:</strong></td><td><strong>${format_currency(totalRepayment)}</strong></td></tr>
+                        </table>
+                    `);
+                };
+
+                // Add real-time handlers
+                dialog.fields_dict.invoice_total.$input.on('input', () => {
+                    const loanAmount = parseFloat(dialog.get_value('invoice_total')) || 0;
+                    refreshDurationOptions(loanAmount);
+                    renderSummary();
                 });
-                
+                const durationField = dialog.get_field('loan_duration');
+                if (durationField && durationField.$input) {
+                    durationField.$input.on('change', renderSummary);
+                }
+
                 dialog.show();
                 this.pezesha_dialog = dialog;
                 this.pezesha_data.dialogVisible = true;
+                // Initial render
+                refreshDurationOptions(parseFloat(dialog.get_value('invoice_total')) || 0);
+                renderSummary();
             };
 
             Payment.prototype.closeDialog = function(dialog) {
@@ -232,7 +378,7 @@ frappe.after_ajax(() => {
                 this.pezesha_data.dialogVisible = false;
             };
 
-            Payment.prototype.submitForm = function(dialog, loanAmount) {
+            Payment.prototype.submitForm = function(dialog, loanAmount, selectedDuration, selectedOption) {
                 if (!loanAmount) {
                     frappe.msgprint({
                         title: __('Invalid Amount'),
@@ -241,14 +387,35 @@ frappe.after_ajax(() => {
                     });
                     return;
                 }
-                
-                if (loanAmount > this.pezesha_data.loanOptions.max_amount) {
+                // Validate against selected option's limit if available
+                if (selectedOption && selectedOption.max_amount && loanAmount > selectedOption.max_amount) {
                     frappe.msgprint({
                         title: __('Loan Amount Exceeds Limit'),
-                        message: __(`Invoice total (${format_currency(loanAmount)}) exceeds your maximum loan limit (${format_currency(this.pezesha_data.loanOptions.max_amount)}).`),
+                        message: __(`Invoice total (${format_currency(loanAmount)}) exceeds your maximum loan limit (${format_currency(selectedOption.max_amount)}).`),
                         indicator: 'red'
                     });
                     return;
+                }
+                // Enforce 14-day constraints here as well
+                const MIN_14_DAY_AMOUNT = 50000;
+                const MAX_14_DAY_AMOUNT = 200000;
+                if (Number(selectedDuration) === 14) {
+                    if (loanAmount < MIN_14_DAY_AMOUNT) {
+                        frappe.msgprint({
+                            title: __('Amount Below Minimum for 14-day'),
+                            message: __(`Minimum amount for 14-day product is ${format_currency(MIN_14_DAY_AMOUNT)}.`),
+                            indicator: 'red'
+                        });
+                        return;
+                    }
+                    if (loanAmount > MAX_14_DAY_AMOUNT) {
+                        frappe.msgprint({
+                            title: __('Amount Exceeds 14-day Cap'),
+                            message: __(`Maximum amount for 14-day product is ${format_currency(MAX_14_DAY_AMOUNT)}.`),
+                            indicator: 'red'
+                        });
+                        return;
+                    }
                 }
                 
                 frappe.call({
