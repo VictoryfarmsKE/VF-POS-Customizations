@@ -45,17 +45,18 @@ def pezesha_loan_offer(customer=None, pos_profile=None):
 
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/options'
+	url = 'https://loans-microservice.pezesha.com/mfi/v1/borrowers/options'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
 		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
-		'Accept-Encoding': 'gzip, deflate'
+		'Accept-Encoding': 'gzip, deflate',
+		'Content-Type': 'application/json'
 	}
 	data = {
 		'channel': pos.custom_pezesha_channel_id,
 		'identifier': customer
 	}
-	response = requests.post(url, headers=headers, data=data)
+	response = requests.post(url, headers=headers, json=data)
 	if response.status_code == 200:
 		try:
 			dt = response.json()
@@ -79,11 +80,12 @@ def pezesha_loan_application(data, pos_profile=None):
 	res = json.loads(data)
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/loans'
+	url = 'https://loans-microservice.pezesha.com/mfi/v1/borrowers/loans'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
 		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
-		'Accept-Encoding': 'gzip, deflate'
+		'Accept-Encoding': 'gzip, deflate',
+		'Content-Type': 'application/json'
 	}
 	# Extract and validate loan payload
 	amount = res.get('amount')
@@ -125,7 +127,7 @@ def pezesha_loan_application(data, pos_profile=None):
 		'fee': fee
 	}
 
-	response = requests.post(url, headers=headers, data=data)
+	response = requests.post(url, headers=headers, json=data)
 	return response.json()
 
 @frappe.whitelist()
@@ -139,17 +141,18 @@ def pezesha_loan_status(customer=None, pos_profile=None):
 	pos = frappe.get_doc("POS Profile", pos_profile)
  
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/latest'
+	url = 'https://loans-microservice.pezesha.com/mfi/v1/borrowers/latest'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
 		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
-		'Accept-Encoding': 'gzip, deflate'
+		'Accept-Encoding': 'gzip, deflate',
+		'Content-Type': 'application/json'
 	}
 	data = {
 		'channel': pos.custom_pezesha_channel_id,
 		'identifier': customer
 	}
-	response = requests.post(url, headers=headers, data=data)
+	response = requests.post(url, headers=headers, json=data)
 	frappe.msgprint(response.json().get('message', 'No message from Pezesha'))
 	return response.json().get('message', 'No message from Pezesha')
 	# if response.status_code == 200:
