@@ -45,7 +45,7 @@ def pezesha_loan_offer(customer=None, pos_profile=None):
 
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://loans-microservice.pezesha.com/mfi/v1/borrowers/options'
+	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/options'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
 		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
@@ -80,7 +80,7 @@ def pezesha_loan_application(data, pos_profile=None):
 	res = json.loads(data)
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://loans-microservice.pezesha.com/mfi/v1/borrowers/loans'
+	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/loans'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
 		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
@@ -141,7 +141,7 @@ def pezesha_loan_status(customer=None, pos_profile=None):
 	pos = frappe.get_doc("POS Profile", pos_profile)
  
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://loans-microservice.pezesha.com/mfi/v1/borrowers/latest'
+	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/latest'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
 		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
