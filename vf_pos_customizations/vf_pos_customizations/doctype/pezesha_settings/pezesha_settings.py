@@ -13,9 +13,9 @@ class PezeshaSettings(Document):
 		if self.enable:
 			try:
 				response = make_post_request(
-					url="https://gateway.pezesha.com/oauth/token",
+					url="https://dev.api.pezesha.com/oauth/token",
 					headers = {
-						'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
+						'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
 						'Accept-Encoding': 'gzip, deflate'
 					},
 					data={
