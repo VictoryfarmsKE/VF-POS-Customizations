@@ -596,6 +596,19 @@ frappe.after_ajax(() => {
                 
                 // Add Pezesha UI elements
                 this.render_pezesha_section();
+
+                // Hook phone payment UX enhancements (dialog instead of DOM freeze)
+                if (!this._phonePaymentUXHooked) {
+                    this._phonePaymentUXHooked = true;
+                    // Ensure our listener is set (overrides core behavior with dialog-based UX)
+                    try {
+                        this.setup_listener_for_payments();
+                    } catch (e) {
+                        console.warn("Failed to attach custom phone payment listener:", e);
+                    }
+                }
+                // Bind request-for-payment button to show dialog when STK push is initiated
+                this._bind_phone_payment_request_button();
             };
 
             // Render Pezesha section
@@ -640,6 +653,147 @@ frappe.after_ajax(() => {
                 } else {
                     console.warn("No parent found for Pezesha section.");
                 }
+            };
+
+            // ========== Phone Payment UX: Dialog-based flow (replaces freeze/unfreeze) ==========
+            Payment.prototype._ensure_phone_payment_dialog = function() {
+                if (this._phonePaymentDialog) return this._phonePaymentDialog;
+
+                const dialog = new frappe.ui.Dialog({
+                    title: __('Waiting for M-Pesa confirmation'),
+                    fields: [
+                        {
+                            fieldtype: 'HTML',
+                            fieldname: 'status_html',
+                            options: `
+                                <div style="min-width:260px">
+                                    <div class="flex" style="align-items:center; gap:10px;">
+                                        <span class="spinner-border spinner-border-sm text-primary" role="status" aria-hidden="true"></span>
+                                        <span id="mpesa-status-message">We sent an STK push to your phone. Please enter your M-Pesa PIN to approve.</span>
+                                    </div>
+                                    <div class="text-muted small mt-2" id="mpesa-elapsed">Elapsed: 0s</div>
+                                    <div class="mt-2 text-muted" id="mpesa-hints">
+                                        If you didn't receive a prompt:
+                                        <ul style="margin: 6px 0 0 18px;">
+                                            <li>Ensure your phone has network</li>
+                                            <li>Check SIM lock / M-Pesa app</li>
+                                            <li>Wait up to 2 minutes</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            `
+                        }
+                    ],
+                    primary_action_label: __('Close'),
+                    primary_action: () => {
+                        dialog.hide();
+                    }
+                });
+
+                this._phonePaymentDialog = dialog;
+                this._phonePaymentStart = null;
+                this._phonePaymentTimer = null;
+                return dialog;
+            };
+
+            Payment.prototype._open_phone_payment_dialog = function(initialMsg) {
+                try { frappe.dom.unfreeze && frappe.dom.unfreeze(); } catch(e) {}
+                const d = this._ensure_phone_payment_dialog();
+                const msg = initialMsg || __('We sent an STK push to your phone. Please approve the payment.');
+                const $msg = $(d.$wrapper).find('#mpesa-status-message');
+                $msg.text(msg);
+                d.show();
+                this._phonePaymentStart = Date.now();
+                // start elapsed timer
+                const $elapsed = $(d.$wrapper).find('#mpesa-elapsed');
+                if (this._phonePaymentTimer) clearInterval(this._phonePaymentTimer);
+                this._phonePaymentTimer = setInterval(() => {
+                    if (!this._phonePaymentStart) return;
+                    const sec = Math.floor((Date.now() - this._phonePaymentStart) / 1000);
+                    $elapsed.text(__('Elapsed: {0}s', [sec]));
+                    // escalate messaging at 30s and 90s
+                    if (sec === 30) {
+                        this._update_phone_payment_dialog(__('Taking longer than usual. Please keep your phone unlocked and try again if needed.'));
+                    } else if (sec === 90) {
+                        this._update_phone_payment_dialog(__('Still waiting for confirmation. You may keep waiting, or cancel and try an alternative payment.'));
+                    }
+                }, 1000);
+            };
+
+            Payment.prototype._update_phone_payment_dialog = function(newMsg) {
+                const d = this._ensure_phone_payment_dialog();
+                const $msg = $(d.$wrapper).find('#mpesa-status-message');
+                if (newMsg) $msg.text(newMsg);
+            };
+
+            Payment.prototype._close_phone_payment_dialog = function() {
+                if (this._phonePaymentTimer) clearInterval(this._phonePaymentTimer);
+                this._phonePaymentTimer = null;
+                this._phonePaymentStart = null;
+                if (this._phonePaymentDialog) {
+                    this._phonePaymentDialog.hide();
+                }
+                try { frappe.dom.unfreeze && frappe.dom.unfreeze(); } catch(e) {}
+            };
+
+            // Try to hook the "Request for Payment" button (if present) to show the dialog immediately
+            Payment.prototype._bind_phone_payment_request_button = function() {
+                try {
+                    const btn = this.request_for_payment_field?.$input?.get && this.request_for_payment_field.$input.get(0);
+                    if (btn && !this._phonePaymentBtnHooked) {
+                        this._phonePaymentBtnHooked = true;
+                        $(btn).on('click._phonepay', () => {
+                            // Open dialog right away to avoid user-perceived freeze
+                            this._open_phone_payment_dialog();
+                        });
+                    }
+                } catch (e) {
+                    // Best-effort hook; ignore if not present in this profile
+                }
+            };
+
+            // Override: listen to realtime and drive the dialog + unfreeze consistently
+            Payment.prototype.setup_listener_for_payments = function() {
+                if (this._phonePaymentListenerAttached) return;
+                this._phonePaymentListenerAttached = true;
+
+                frappe.realtime.on('process_phone_payment', (data) => {
+                    const doc = this.events.get_frm().doc;
+                    const { amount, success, failure_message } = data || {};
+
+                    let title = null;
+                    let message = null;
+
+                    const grand_total = cint(frappe.sys_defaults.disable_rounded_total)
+                        ? doc.grand_total
+                        : doc.rounded_total;
+
+                    if (success) {
+                        title = __('Payment Received');
+                        if (amount >= grand_total) {
+                            // Full success
+                            this._close_phone_payment_dialog();
+                            message = __('Payment of {0} received successfully.', [
+                                format_currency(amount, doc.currency, 0),
+                            ]);
+                            this.events.submit_invoice();
+                            cur_frm.reload_doc();
+                        } else {
+                            // Partial success: keep the dialog open with updated text
+                            message = __('Payment of {0} received successfully. Waiting for other requests to complete...', [
+                                format_currency(amount, doc.currency, 0),
+                            ]);
+                            this._open_phone_payment_dialog(message);
+                        }
+                    } else {
+                        // Failure
+                        title = __('Payment Failed');
+                        message = failure_message || __('Payment could not be completed. Please try again.');
+                        this._close_phone_payment_dialog();
+                    }
+
+                    frappe.msgprint({ message, title });
+                });
             };
             clearInterval(interval);
         } else if (retries > 20) {
