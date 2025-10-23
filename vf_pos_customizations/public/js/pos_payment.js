@@ -188,7 +188,7 @@ frappe.after_ajax(() => {
                             options: option7 ? ['7'] : [],
                             default: (option7 ? '7' : ''),
                             depends_on: 'eval: true',
-                            description: __('Choose 7 or 14 days (14-day requires at least Ksh 50,000 and eligibility)')
+                            description: __('Choose 7 or 14 days (14-day requires at least Ksh 50,000 to be eligible)'),
                         },
                         {
                             fieldtype: 'HTML',
