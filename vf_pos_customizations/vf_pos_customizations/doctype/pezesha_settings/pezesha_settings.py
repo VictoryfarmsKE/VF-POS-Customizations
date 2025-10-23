@@ -174,7 +174,7 @@ def corn():
 	if doc.enable:
 		try:
 			response = make_post_request(
-				url="https://gateway.pezesha.com/oauth/token",
+				url="https://dev.api.pezesha.com/oauth/token",
 				headers = {
 					'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
 					'Accept-Encoding': 'gzip, deflate'
