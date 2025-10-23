@@ -45,15 +45,13 @@ frappe.after_ajax(() => {
                     },
                     callback: (r) => {
                         frappe.hide_progress();
+                        // console.log("Pezesha loan offer response:", r);
                         
                         if (r.message) {
-                            // Check if response is a status code (error)
                             if (typeof r.message === 'number') {
                                 this.handleLoanOfferError({ status: r.message });
                                 return;
                             }
-                            
-                            // Check if response is an error message
                             if (typeof r.message === 'string' && r.message.includes('pending loan')) {
                                 frappe.msgprint({
                                     title: __('Pending Loan'),
@@ -62,8 +60,6 @@ frappe.after_ajax(() => {
                                 });
                                 return;
                             }
-                            
-                            // Success response - API returns direct data object
                             const responseData = r.message;
                             
                             if (responseData.status === 200 && responseData.data) {
@@ -544,10 +540,8 @@ frappe.after_ajax(() => {
                         pos_profile: this.pos_profile
                     },
                     callback: (r) => {
-                        //console log response for debugging
-                        console.log("Pezesha loan status response:", r);
                         if (r.message) {
-                            // Check if response is a status code (error)
+                            // Check status response
                             if (typeof r.message === 'number') {
                                 this.handleLoanStatusError();
                                 return;
@@ -588,20 +582,19 @@ frappe.after_ajax(() => {
                 this.showErrorDialog();
             };
 
-            // Override render_payment_section to add Pezesha UI
+            // add Pezesha UI
             Payment.prototype.render_payment_section = function () {
                 console.log("Custom render_payment_section called with complete Pezesha integration");
                 
-                // Call original methods
                 this.render_payment_mode_dom();
                 this.make_invoice_fields_control();
                 this.update_totals_section();
                 
-                // Add Pezesha UI elements
+                // add Pezesha UI elements
                 this.render_pezesha_section();
             };
 
-            // Render Pezesha section
+            // render Pezesha section
             Payment.prototype.render_pezesha_section = function() {
                 let $parent = this.$invoice_fields_section;
                 if (!$parent || !$parent.length) {
