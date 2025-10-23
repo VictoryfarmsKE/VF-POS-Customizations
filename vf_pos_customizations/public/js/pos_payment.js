@@ -544,6 +544,8 @@ frappe.after_ajax(() => {
                         pos_profile: this.pos_profile
                     },
                     callback: (r) => {
+                        //console log response for debugging
+                        console.log("Pezesha loan status response:", r);
                         if (r.message) {
                             // Check if response is a status code (error)
                             if (typeof r.message === 'number') {
@@ -597,19 +599,6 @@ frappe.after_ajax(() => {
                 
                 // Add Pezesha UI elements
                 this.render_pezesha_section();
-
-                // Hook phone payment UX enhancements (dialog instead of DOM freeze)
-                if (!this._phonePaymentUXHooked) {
-                    this._phonePaymentUXHooked = true;
-                    // Ensure our listener is set (overrides core behavior with dialog-based UX)
-                    try {
-                        this.setup_listener_for_payments();
-                    } catch (e) {
-                        console.warn("Failed to attach custom phone payment listener:", e);
-                    }
-                }
-                // Bind request-for-payment button to show dialog when STK push is initiated
-                this._bind_phone_payment_request_button();
             };
 
             // Render Pezesha section
@@ -620,7 +609,6 @@ frappe.after_ajax(() => {
                 }
                 
                 if (!$parent.length) {
-                    // Try alternative selectors
                     $parent = $(".payment-container, .pos-payment-section, .invoice-fields");
                 }
                 
