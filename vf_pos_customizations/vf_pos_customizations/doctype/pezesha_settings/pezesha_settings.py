@@ -13,9 +13,9 @@ class PezeshaSettings(Document):
 		if self.enable:
 			try:
 				response = make_post_request(
-					url="https://gateway.pezesha.com/oauth/token",
+					url="https://dev.api.pezesha.com/oauth/token",
 					headers = {
-						'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
+						'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
 						'Accept-Encoding': 'gzip, deflate'
 					},
 					data={
@@ -45,17 +45,18 @@ def pezesha_loan_offer(customer=None, pos_profile=None):
 
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/options'
+	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/options'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
-		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
-		'Accept-Encoding': 'gzip, deflate'
+		'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
+		'Accept-Encoding': 'gzip, deflate',
+		'Content-Type': 'application/json'
 	}
 	data = {
 		'channel': pos.custom_pezesha_channel_id,
 		'identifier': customer
 	}
-	response = requests.post(url, headers=headers, data=data)
+	response = requests.post(url, headers=headers, json=data)
 	if response.status_code == 200:
 		try:
 			dt = response.json()
@@ -79,23 +80,54 @@ def pezesha_loan_application(data, pos_profile=None):
 	res = json.loads(data)
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/loans'
+	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/loans'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
-		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
-		'Accept-Encoding': 'gzip, deflate'
+		'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
+		'Accept-Encoding': 'gzip, deflate',
+		'Content-Type': 'application/json'
 	}
+	# Extract and validate loan payload
+	amount = res.get('amount')
+	duration = res.get('duration')
+	interest = res.get('interest')
+	rate = res.get('rate')
+	fee = res.get('fee')
+
+	try:
+		amount_val = float(amount)
+	except Exception:
+		amount_val = None
+
+	try:
+		duration_val = int(duration)
+	except Exception:
+		duration_val = None
+
+	# Enforce product constraints server-side for safety
+	MAX_CAP = 200000
+	MIN_14_DAY = 50000
+
+	if amount_val is None or amount_val <= 0:
+		return {"status": 400, "message": "Invalid loan amount."}
+	if duration_val not in (7, 14):
+		return {"status": 400, "message": "Invalid loan duration. Allowed values are 7 or 14 days."}
+	if amount_val > MAX_CAP:
+		return {"status": 400, "message": f"Amount exceeds the maximum limit of {MAX_CAP:,} KSH."}
+	if duration_val == 14 and amount_val < MIN_14_DAY:
+		return {"status": 400, "message": f"Minimum amount for 14-day product is {MIN_14_DAY:,} KSH."}
+
 	data = {
 		'channel': pos.custom_pezesha_channel_id,
 		'pezesha_id': customer,
-		'amount': res.get('amount'),
-		'duration': res.get('duration'),
-		'interest': res.get('interest'),
-		'rate': res.get('rate'),
-		'fee': res.get('fee')
+		'amount': amount_val,
+		'duration': duration_val,
+		'interest': interest,
+		'rate': rate,
+		'fee': fee
 	}
 
-	response = requests.post(url, headers=headers, data=data)
+	response = requests.post(url, headers=headers, json=data)
 	return response.json()
 
 @frappe.whitelist()
@@ -109,17 +141,18 @@ def pezesha_loan_status(customer=None, pos_profile=None):
 	pos = frappe.get_doc("POS Profile", pos_profile)
  
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/latest'
+	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/latest'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
-		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
-		'Accept-Encoding': 'gzip, deflate'
+		'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
+		'Accept-Encoding': 'gzip, deflate',
+		'Content-Type': 'application/json'
 	}
 	data = {
 		'channel': pos.custom_pezesha_channel_id,
 		'identifier': customer
 	}
-	response = requests.post(url, headers=headers, data=data)
+	response = requests.post(url, headers=headers, json=data)
 	frappe.msgprint(response.json().get('message', 'No message from Pezesha'))
 	return response.json().get('message', 'No message from Pezesha')
 	# if response.status_code == 200:
@@ -141,9 +174,9 @@ def corn():
 	if doc.enable:
 		try:
 			response = make_post_request(
-				url="https://gateway.pezesha.com/oauth/token",
+				url="https://dev.api.pezesha.com/oauth/token",
 				headers = {
-					'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
+					'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
 					'Accept-Encoding': 'gzip, deflate'
 				},
 				data={
