@@ -13,9 +13,9 @@ class PezeshaSettings(Document):
 		if self.enable:
 			try:
 				response = make_post_request(
-					url="https://dev.api.pezesha.com/oauth/token",
+					url="https://gateway.pezesha.com/oauth/token",
 					headers = {
-						'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
+						'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
 						'Accept-Encoding': 'gzip, deflate'
 					},
 					data={
@@ -45,10 +45,10 @@ def pezesha_loan_offer(customer=None, pos_profile=None):
 
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/options'
+	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/options'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
-		'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
+		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
 		'Accept-Encoding': 'gzip, deflate',
 		'Content-Type': 'application/json'
 	}
@@ -80,10 +80,10 @@ def pezesha_loan_application(data, pos_profile=None):
 	res = json.loads(data)
 	pos = frappe.get_doc("POS Profile", pos_profile)
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/loans'
+	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/loans'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
-		'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
+		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
 		'Accept-Encoding': 'gzip, deflate',
 		'Content-Type': 'application/json'
 	}
@@ -141,10 +141,10 @@ def pezesha_loan_status(customer=None, pos_profile=None):
 	pos = frappe.get_doc("POS Profile", pos_profile)
  
 	pz_st = frappe.db.get_single_value('Pezesha Settings', 'authorization')
-	url = 'https://dev.api.pezesha.com/mfi/v1/borrowers/latest'
+	url = 'https://gateway.pezesha.com/mfi/v1/borrowers/latest'
 	headers = {
 		'Authorization': f'Bearer {pz_st}',
-		'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
+		'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
 		'Accept-Encoding': 'gzip, deflate',
 		'Content-Type': 'application/json'
 	}
@@ -174,9 +174,9 @@ def corn():
 	if doc.enable:
 		try:
 			response = make_post_request(
-				url="https://dev.api.pezesha.com/oauth/token",
+				url="https://gateway.pezesha.com/oauth/token",
 				headers = {
-					'pezesha-apikey': 'Fo1CoRFD4k2SpwaQ3jZ1icv1403HbcGl',
+					'pezesha-apikey': '9ea7l6xraTJjDAXU6KYogxcArmlDGE1u',
 					'Accept-Encoding': 'gzip, deflate'
 				},
 				data={
