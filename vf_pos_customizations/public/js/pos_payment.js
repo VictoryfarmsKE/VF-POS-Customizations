@@ -454,15 +454,12 @@ frappe.after_ajax(() => {
                 if (response.status === 403 || response.status === 403) {
                     dialogtitle = "Loan Application Denied";
                     dialogMessage = "Loan application failed: You already have a pending loan or previous loan is overdue. Please settle outstanding dues to apply for a new loan.";
-                } else if (response.status === 400 || response.status === 400) {
-                    dialogtitle = "Invalid Loan Application";
-                    dialogMessage = "Loan application failed: The requested loan amount is invalid or exceeds the allowed limit.";
                 } else if (response.status === 401 || response.status === 401) {
                     dialogtitle = "Authorization Error";
                     dialogMessage = "Authentication failed. Please check Pezesha API credentials.";
                 } else {
-                    dialogtitle = "Application Failed";
-                    dialogMessage = "Unable to process loan application. Please try again later.";
+                    dialogtitle = "Pezesha Response";
+                    dialogMessage = response.message || "Unable to retrieve loan offers. Please try again later.";
                 }
                 
                 this.pezesha_data.dialogtitle = dialogtitle;
