@@ -59,7 +59,7 @@ def create_payment_request(self):
 			return pay_req
 
 def auto_close_open_nrb_pos():
-    frappe.log_error("Auto-closing open Nairobi POS sessions")
+    # frappe.log_error("Auto-closing open Nairobi POS sessions")
     #find POS Profiles where the POS Profile field custom_region = "Nairobi Region"
     pos_profiles = frappe.get_all(
         "POS Profile",
@@ -82,13 +82,13 @@ def auto_close_open_nrb_pos():
             closing_entry.insert(ignore_permissions=True)
             closing_entry.submit()
             
-            frappe.log_error(f"Successfully auto-closed Nairobi POS profile {entry.pos_profile}, opening entry {entry.name}")
+            # frappe.log_error(f"Successfully auto-closed Nairobi POS profile {entry.pos_profile}, opening entry {entry.name}")
 
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), f"Auto Nairobi POS Close Failed: {entry.name}")
  
 def auto_close_open_western_pos():
-    frappe.log_error("Auto-closing open Western POS sessions")
+    # frappe.log_error("Auto-closing open Western POS sessions")
     #find POS Profiles where the POS Profile field custom_region = "Western Region"
     pos_profiles = frappe.get_all(
         "POS Profile",
@@ -111,13 +111,13 @@ def auto_close_open_western_pos():
             closing_entry.insert(ignore_permissions=True)
             closing_entry.submit()
             
-            frappe.log_error(f"Successfully auto-closed Western POS profile {entry.pos_profile}, opening entry {entry.name}")
+            # frappe.log_error(f"Successfully auto-closed Western POS profile {entry.pos_profile}, opening entry {entry.name}")
 
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), f"Auto Western POS Close Failed: {entry.name}")
             
 def auto_close_open_msa_pos():
-    frappe.log_error("Auto-closing open Mombasa POS sessions")
+    # frappe.log_error("Auto-closing open Mombasa POS sessions")
     #find POS Profiles where the POS Profile field custom_region = "Mombasa Region"
     pos_profiles = frappe.get_all(
         "POS Profile",
@@ -139,7 +139,7 @@ def auto_close_open_msa_pos():
             closing_entry.posting_time = nowtime()
             closing_entry.insert(ignore_permissions=True)
             closing_entry.submit()
-            frappe.log_error(f"Successfully auto-closed Mombasa POS profile {entry.pos_profile}, opening entry {entry.name}")
+            # frappe.log_error(f"Successfully auto-closed Mombasa POS profile {entry.pos_profile}, opening entry {entry.name}")
 
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), f"Auto Mombasa POS Close Failed: {entry.name}")
