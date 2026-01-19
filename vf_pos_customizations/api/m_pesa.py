@@ -57,10 +57,17 @@ def confirmation(**kwargs):
         # requester / msisdn mapping
         doc.msisdn = args.get("MSISDN") or args.get("Requester")
 
-        # names (if present)
-        doc.firstname = args.get("FirstName")
+        # names (if present). Use Initiator as fallback for firstname (API operator username)
+        doc.firstname = args.get("FirstName") or args.get("Initiator")
         doc.middlename = args.get("MiddleName")
         doc.lastname = args.get("LastName")
+
+        # populate full_name for easier listing: prefer provided name parts, else Initiator
+        if not (args.get("FirstName") or args.get("MiddleName") or args.get("LastName")) and args.get("Initiator"):
+            doc.full_name = args.get("Initiator")
+        else:
+            parts = [args.get("FirstName"), args.get("MiddleName"), args.get("LastName")]
+            doc.full_name = " ".join([p for p in parts if p])
 
         doc.insert(ignore_permissions=True)
         frappe.db.commit()
