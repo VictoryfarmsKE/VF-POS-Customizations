@@ -210,17 +210,17 @@ scheduler_events = {
     "cron": {
         # Western Branch: 7am, 10am, 1pm, 4pm
         #change to only 7pm and 11pm
-        "0 19,23 * * *": [
+        "23 * * *": [
             "vf_pos_customizations.custom.point_of_sale.auto_close_open_western_pos"
         ],
 
         # Nairobi Branches: 9am, 12pm, 3pm, 6pm
-        "0 19,23 * * *": [
+        "23 * * *": [
             "vf_pos_customizations.custom.point_of_sale.auto_close_open_nrb_pos"
         ],
 
         # Mombasa Branch: 8am, 11am, 2pm, 5pm
-        "0 19,23 * * *": [
+        "23 * * *": [
             "vf_pos_customizations.custom.point_of_sale.auto_close_open_msa_pos"
         ],
     }
