@@ -215,14 +215,32 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
 
         // Pagination controls
         let total_pages = Math.ceil(mpesa_payments.length / PAGE_SIZE);
-        html += `<nav>
-            <ul class="pagination justify-content-center">`;
-        for (let i = 1; i <= total_pages; i++) {
-            html += `<li class="page-item${i === mpesa_page ? " active" : ""}">
-                <a class="page-link pr-mpesa-page" data-page="${i}" href="#">${i}</a>
+        let html_pagination = `<nav><ul class="pagination justify-content-center">`;
+
+        function mpesaPageItem(page, label = null, active = false, disabled = false) {
+            return `<li class="page-item${active ? " active" : ""}${disabled ? " disabled" : ""}">
+                <a class="page-link pr-mpesa-page" data-page="${page}" href="#">${label || page}</a>
             </li>`;
         }
-        html += `</ul></nav>`;
+
+        if (total_pages > 1) {
+            html_pagination += mpesaPageItem(1, "1", mpesa_page === 1);
+            if (mpesa_page > 4) {
+                html_pagination += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+            let range_start = Math.max(2, mpesa_page - 2);
+            let range_end = Math.min(total_pages - 1, mpesa_page + 2);
+            for (let i = range_start; i <= range_end; i++) {
+                html_pagination += mpesaPageItem(i, null, mpesa_page === i);
+            }
+            if (mpesa_page < total_pages - 3) {
+                html_pagination += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+            html_pagination += mpesaPageItem(total_pages, total_pages.toString(), mpesa_page === total_pages);
+        }
+
+        html_pagination += `</ul></nav>`;
+        html += html_pagination;
 
         $("#pr-mpesa-table").html(html);
     }

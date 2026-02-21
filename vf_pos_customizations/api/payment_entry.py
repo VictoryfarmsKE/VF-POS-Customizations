@@ -1,84 +1,12 @@
 
-import frappe, erpnext, json
+import frappe
+import json
 from frappe import _
-from frappe.utils import nowdate, flt, getdate
-from erpnext.accounts.party import get_party_account
-from erpnext.accounts.utils import get_account_currency
+from frappe.utils import nowdate, flt
 from erpnext.accounts.doctype.journal_entry.journal_entry import (
     get_default_bank_cash_account,
 )
-from erpnext.setup.utils import get_exchange_rate
-from erpnext.accounts.doctype.bank_account.bank_account import get_party_bank_account
 from vf_pos_customizations.api.m_pesa import submit_mpesa_payment
-from erpnext.accounts.utils import get_outstanding_invoices as _get_outstanding_invoices
-from operator import itemgetter
-import ast
-
-def get_bank_cash_account(company, mode_of_payment, bank_account=None):
-    """
-    Retrieve the default bank or cash account based on the company and mode of payment.
-
-    Args:
-        company (str): Company for which the account is being retrieved.
-        mode_of_payment (str): Mode of payment for the transaction.
-        bank_account (str, optional): Specific bank account to retrieve. Defaults to None.
-
-    Returns:
-        BankAccount: Default bank or cash account.
-    """
-    bank = get_default_bank_cash_account(
-        company, "Bank", mode_of_payment=mode_of_payment, account=bank_account
-    )
-
-    if not bank:
-        bank = get_default_bank_cash_account(
-            company, "Cash", mode_of_payment=mode_of_payment, account=bank_account
-        )
-
-    return bank
-
-def set_paid_amount_and_received_amount(
-    party_account_currency,
-    bank,
-    outstanding_amount,
-    payment_type,
-    bank_amount,
-    conversion_rate,
-):
-    """
-    Set the paid amount and received amount based on currency and conversion rate.
-
-    Args:
-        party_account_currency (str): Currency of the party account.
-        bank (BankAccount): Bank account used for the transaction.
-        outstanding_amount (float): Outstanding amount to be paid/received.
-        payment_type (str): Type of payment (Receive/Pay).
-        bank_amount (float): Amount in the bank account currency (if available).
-        conversion_rate (float): Conversion rate between currencies.
-
-    Returns:
-        float: Paid amount.
-        float: Received amount.
-    """
-    paid_amount = received_amount = 0
-    if party_account_currency == bank["account_currency"]:
-        paid_amount = received_amount = abs(outstanding_amount)
-    elif payment_type == "Receive":
-        paid_amount = abs(outstanding_amount)
-        if bank_amount:
-            received_amount = bank_amount
-        else:
-            received_amount = paid_amount * conversion_rate
-
-    else:
-        received_amount = abs(outstanding_amount)
-        if bank_amount:
-            paid_amount = bank_amount
-        else:
-            # if party account currency and bank currency is different then populate paid amount as well
-            paid_amount = received_amount * conversion_rate
-
-    return paid_amount, received_amount
 
 @frappe.whitelist()
 def get_outstanding_invoices(company, currency, customer=None, pos_profile=None):
@@ -216,8 +144,11 @@ def process_pos_payment(payload):
                                 new_payment_row.amount = mpesa_amount
                                 invoice_modified = True
                             
-                            # Set M-Pesa receipt number using transaction ID
-                            invoice_doc.mpesa_receipt_number = mpesa_payment.get("transid")
+                            # Accumulate M-Pesa receipt numbers (multiple payments possible)
+                            existing = invoice_doc.mpesa_receipt_number or ""
+                            new_id = mpesa_payment.get("transid") or ""
+                            if new_id and new_id not in existing:
+                                invoice_doc.mpesa_receipt_number = ", ".join(filter(None, [existing, new_id]))
                             invoice_modified = True
                 
                 # Process other payment methods
@@ -289,22 +220,23 @@ def process_pos_payment(payload):
 
                     if invoice_doc.docstatus == 0:
                         invoice_doc.submit()
-                    
-                    # # Submit M-Pesa payments if they exist
-                    # if data.get('selected_mpesa_payments'):
-                    #     for mpesa_payment in data.selected_mpesa_payments:
-                    #         try:
-                    #             submit_mpesa_payment(mpesa_payment.get("name"), customer)
-                    #         except Exception as e:
-                    #             errors.append(f"Error submitting M-Pesa payment {mpesa_payment.get('name')}: {str(e)}")
-                    
+
+                    # Submit M-Pesa payments to link them to the customer
+                    if data.get('selected_mpesa_payments'):
+                        for mpesa_payment in data.selected_mpesa_payments:
+                            try:
+                                submit_mpesa_payment(mpesa_payment.get("name"), customer)
+                            except Exception as e:
+                                errors.append(f"Error submitting M-Pesa payment {mpesa_payment.get('name')}: {str(e)}")
+
                     processed_invoices.append({
                         "name": invoice_doc.name,
                         "total_paid": total_paid,
                         "grand_total": grand_total,
                         "change_amount": change_amount,
+                        "outstanding_amount": max(flt(invoice_doc.outstanding_amount), 0),
                         "is_pos": 0,
-                        "status": "Submitted" if invoice_doc.docstatus == 1 else "Submitted"
+                        "status": "Submitted" if invoice_doc.docstatus == 1 else "Saved"
                     })
                 
             except Exception as e:
@@ -340,7 +272,7 @@ def _generate_pos_payment_result_message(processed_invoices, selected_mpesa_paym
         msg += "<table class='table table-bordered'>"
         msg += "<thead><tr><th>Transaction ID</th><th>Mode of Payment</th><th>Amount</th></tr></thead><tbody>"
         for mpesa in selected_mpesa_payments:
-            msg += f"<tr><td>{mpesa.get('transid')}</td><td>{mpesa.get('mode_of_payment')}</td><td>{mpesa.get('amount')}</td><td>{mpesa.get('mobile_no')}</td></tr>"
+            msg += f"<tr><td>{mpesa.get('transid')}</td><td>{mpesa.get('mode_of_payment')}</td><td>{mpesa.get('amount')}</td></tr>"
         msg += "</tbody></table>"
     
     if errors:

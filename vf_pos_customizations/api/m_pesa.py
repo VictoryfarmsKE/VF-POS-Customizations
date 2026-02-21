@@ -106,7 +106,7 @@ def get_mpesa_draft_payments(
     full_name=None,
     payment_methods_list=None,
 ):
-    filters = {"company": company, "docstatus": 0}
+    filters = {"company": company, "docstatus": 0, "mode_of_payment": ["is", "set"]}
     if mode_of_payment:
         filters["mode_of_payment"] = mode_of_payment
     if mobile_no:
