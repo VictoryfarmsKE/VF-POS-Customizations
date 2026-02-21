@@ -5,6 +5,7 @@ from requests.auth import HTTPBasicAuth
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 from typing import Optional, List, Dict, Any
 
 def get_token(app_key: str, app_secret: str, base_url: str) -> str:
@@ -18,69 +19,65 @@ def get_token(app_key: str, app_secret: str, base_url: str) -> str:
     return response.json().get("access_token", "")
 
 @frappe.whitelist(allow_guest=True)
-def confirmation(**kwargs):
+def confirmation(**kwargs) -> Dict[str, Any]:
+    """
+    Handle M-Pesa payment confirmation callback and enqueues document creation
+    """
     try:
         args = frappe._dict(kwargs)
+        frappe.set_user("Administrator")
 
-        # detect B2B payloads (presence of Initiator or Command ID/CommandID)
-        is_b2b = bool(args.get("Initiator") or args.get("Command ID") or args.get("CommandID"))
+        frappe.enqueue(
+            "vf_pos_customizations.api.m_pesa.delayed_insert_mpesa_payment",
+            queue="short",
+            is_async=True,
+            timeout=300,
+            payment_data={
+                "transactiontype": args.get("TransactionType"),
+                "transid": args.get("TransID"),
+                "transtime": args.get("TransTime"),
+                "transamount": flt(args.get("TransAmount")),
+                "businessshortcode": args.get("BusinessShortCode"),
+                "billrefnumber": args.get("BillRefNumber"),
+                "invoicenumber": args.get("InvoiceNumber"),
+                "orgaccountbalance": args.get("OrgAccountBalance"),
+                "thirdpartytransid": args.get("ThirdPartyTransID"),
+                "msisdn": args.get("MSISDN"),
+                "firstname": args.get("FirstName"),
+                "middlename": args.get("MiddleName"),
+                "lastname": args.get("LastName"),
+            },
+        )
+
+        frappe.db.commit()
+        return {"ResultCode": 0, "ResultDesc": "Accepted"}
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), f"M-Pesa Confirmation Error: {str(e)[:140]}")
+        return {"ResultCode": 1, "ResultDesc": "Rejected"}
+    finally:
+        frappe.set_user("Guest")
+
+
+def delayed_insert_mpesa_payment(payment_data: Dict[str, Any]) -> None:
+    try:
+        if payment_data.get("transid") and frappe.db.exists(
+            "Mpesa Payment Register", {"transid": payment_data["transid"]}
+        ):
+            frappe.logger().info(
+                f"M-Pesa confirmation skipped — TransID {payment_data['transid']} already recorded."
+            )
+            return
 
         doc = frappe.new_doc("Mpesa Payment Register")
-
-        # store raw payload for auditing (backward compatible)
-        try:
-            doc.raw_payload = json.dumps(kwargs)
-        except Exception:
-            doc.raw_payload = str(kwargs)
-
-        # common mappings (C2B and B2B)
-        # Amount / TransAmount -> transamount
-        doc.transamount = args.get("TransAmount") or args.get("Amount")
-
-        # Transaction / Command
-        doc.transactiontype = args.get("TransactionType") or args.get("Command ID") or args.get("CommandID")
-
-        # Shortcodes / parties
-        doc.businessshortcode = args.get("BusinessShortCode") or args.get("PartyA")
-        # PartyB doesn't map directly to existing field; save into billrefnumber if present
-        if args.get("PartyB"):
-            doc.billrefnumber = args.get("PartyB")
-        else:
-            doc.billrefnumber = args.get("BillRefNumber") or args.get("AccountReference")
-
-        # IDs and references
-        doc.transid = args.get("TransID") or args.get("AccountReference") or args.get("ThirdPartyTransID")
-        doc.invoicenumber = args.get("InvoiceNumber")
-        doc.orgaccountbalance = args.get("OrgAccountBalance")
-        doc.thirdpartytransid = args.get("ThirdPartyTransID") or args.get("SecurityCredential")
-
-        # requester / msisdn mapping
-        doc.msisdn = args.get("MSISDN") or args.get("Requester")
-
-        # names (if present). Use Initiator as fallback for firstname (API operator username)
-        doc.firstname = args.get("FirstName") or args.get("Initiator")
-        doc.middlename = args.get("MiddleName")
-        doc.lastname = args.get("LastName")
-
-        # populate full_name for easier listing: prefer provided name parts, else Initiator
-        if not (args.get("FirstName") or args.get("MiddleName") or args.get("LastName")) and args.get("Initiator"):
-            doc.full_name = args.get("Initiator")
-        else:
-            parts = [args.get("FirstName"), args.get("MiddleName"), args.get("LastName")]
-            doc.full_name = " ".join([p for p in parts if p])
+        for k, v in payment_data.items():
+            setattr(doc, k, v)
 
         doc.insert(ignore_permissions=True)
         frappe.db.commit()
-
-        # Return string result codes per M-PESA spec
-        context = {"ResultCode": "0", "ResultDesc": "Accepted"}
-        return dict(context)
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), str(e)[:140])
-        context = {"ResultCode": "1", "ResultDesc": "Rejected"}
-        return dict(context)
-
-
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "Delayed Mpesa Payment Insert Error")
+    
+    
 @frappe.whitelist(allow_guest=True)
 def validation(**kwargs) -> Dict[str, Any]:
     """
