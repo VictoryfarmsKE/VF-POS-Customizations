@@ -1,8 +1,33 @@
 import frappe
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
-from frappe.utils import now_datetime, nowdate, nowtime
+from frappe.utils import now_datetime, nowdate, nowtime, get_datetime
 from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import make_closing_entry_from_opening
 import math
+
+
+@frappe.whitelist()
+def get_pos_invoices(start, end, pos_profile, user=None):
+	#Override of ERPNext get_pos_invoices
+	if not user:
+		user = frappe.session.user
+	data = frappe.db.sql(
+		"""
+	select
+		name, timestamp(posting_date, posting_time) as "timestamp"
+	from
+		`tabPOS Invoice`
+	where
+		owner = %s and docstatus = 1 and pos_profile = %s and ifnull(consolidated_invoice,'') = ''
+	order by
+		timestamp
+	""",
+		(user, pos_profile),
+		as_dict=1,
+	)
+
+	data = list(filter(lambda d: get_datetime(start) <= get_datetime(d.timestamp) <= get_datetime(end), data))
+	data = [frappe.get_doc("POS Invoice", d.name).as_dict() for d in data]
+	return data
 
 @frappe.whitelist()
 def get_past_order_list(search_term, status, pos_profile, limit=20):

@@ -3,7 +3,7 @@ frappe.after_ajax(() => {
     const interval = setInterval(() => {
         const Payment = erpnext?.PointOfSale?.Payment;
         if (Payment && !Payment.prototype.__pezesha_customized) {
-            console.log("Overriding POS Payment with complete Pezesha integration...");
+            // console.log("Overriding POS Payment with complete Pezesha integration...");
             Payment.prototype.__pezesha_customized = true;
             
             Payment.prototype.pezesha_data = {

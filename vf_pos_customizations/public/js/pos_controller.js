@@ -3,12 +3,8 @@ frappe.after_ajax(() => {
     const interval = setInterval(() => {
         const POSController = erpnext?.PointOfSale?.Controller;
         if (POSController && !POSController.prototype.__vf_customized) {
-            console.log("VF POS: Overriding POS Controller...");
-
-            // Mark as patched to avoid double patching
             POSController.prototype.__vf_customized = true;
 
-            // Patch make_app to add custom buttons
             const _make_app = POSController.prototype.make_app;
             POSController.prototype.make_app = function () {
                 _make_app.apply(this, arguments);
@@ -16,7 +12,6 @@ frappe.after_ajax(() => {
             };
 
             POSController.prototype.prepare_vf_button = function () {
-                //add button to create new invoice function is  POSController.prototype.new_invoice
                 this.page.add_button(__('New Invoice'), () => this.new_invoice(), {
                     btn_class: "btn-default new-invoice-btn",
                 });

@@ -165,6 +165,12 @@ page_js = {
 # 		"on_trash": "method"
 # 	}
 # }
+# Override Whitelisted Methods
+# ----------------------------
+override_whitelisted_methods = {
+    "erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices": "vf_pos_customizations.custom.point_of_sale.get_pos_invoices"
+}
+
 doc_events = {
     "POS Invoice": {
         "before_submit": "vf_pos_customizations.vf_pos_customizations.customization.pos_invoice.pos_invoice.before_submit_invoice"

@@ -3,7 +3,6 @@ frappe.after_ajax(() => {
     const interval = setInterval(() => {
         const PastOrderList = erpnext?.PointOfSale?.PastOrderList;
         if (PastOrderList && !PastOrderList.prototype.__vf_customized) {
-            console.log("Overriding POS PastOrderList...");
             PastOrderList.prototype.__vf_customized = true;
 
             PastOrderList.prototype.prepare_dom = function () {
