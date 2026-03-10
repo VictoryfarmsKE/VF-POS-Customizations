@@ -147,3 +147,125 @@ def submit_mpesa_payment(mpesa_payment: str, customer: str) -> Dict[str, Any]:
     doc.submit()
     # return frappe.get_doc("Payment Entry", doc.payment_entry).as_dict()
     return frappe.msgprint(_("Thank you for your payment."))
+
+
+@frappe.whitelist()
+def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
+    """
+    Trigger a transaction status check for a given Mpesa transaction.
+    Adapted from frappe_mpsa_payments MpesaSettings.trigger_transaction_status.
+    """
+    from urllib.parse import urlparse
+    try:
+        site_address = frappe.utils.get_request_site_address(True)
+        parsed_url = urlparse(site_address)
+        site_url = f"{parsed_url.scheme}://{parsed_url.hostname}"
+
+        queue_timeout_url = (
+            site_url
+            + "/api/method/vf_pos_customizations.api.m_pesa.handle_queue_timeout"
+        )
+        result_url = (
+            site_url
+            + "/api/method/vf_pos_customizations.api.m_pesa.handle_transaction_status_result"
+        )
+
+        settings = frappe.get_doc("Mpesa Settings", mpesa_settings)
+
+        integration_request = frappe.get_doc(
+            {
+                "doctype": "Integration Request",
+                "is_remote_request": 1,
+                "integration_request_service": "Mpesa Transaction Status",
+                "reference_doctype": "Mpesa Payment Register",
+                "status": "Queued",
+                "data": json.dumps(
+                    {
+                        "mpesa_settings": mpesa_settings,
+                        "transaction_id": transaction_id,
+                        "remarks": remarks,
+                        "queue_timeout_url": queue_timeout_url,
+                        "result_url": result_url,
+                    }
+                ),
+                "method": "POST",
+            }
+        ).insert(ignore_permissions=True)
+        frappe.db.commit()
+        base_url = (
+            "https://api.safaricom.co.ke"
+            if not settings.sandbox
+            else "https://sandbox.safaricom.co.ke"
+        )
+
+        token = get_token(
+            settings.consumer_key, settings.get_password("consumer_secret"), base_url
+        )
+
+        payload = {
+            "Initiator": settings.initiator_name,
+            "SecurityCredential": settings.security_credential,
+            "CommandID": "TransactionStatusQuery",
+            "TransactionID": transaction_id,
+            "PartyA": settings.business_shortcode
+            if not settings.sandbox
+            else settings.till_number,
+            "IdentifierType": 4,
+            "Remarks": remarks,
+            "Occasion": "",
+            "QueueTimeOutURL": queue_timeout_url,
+            "ResultURL": result_url,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+        saf_url = f"{base_url}/mpesa/transactionstatus/v1/query"
+        r = requests.post(saf_url, headers=headers, json=payload)
+        response = r.json()
+
+        status = "Completed" if response.get("ResponseCode") == "0" else "Failed"
+        output = (
+            frappe.as_json(response)
+            if status == "Completed"
+            else f"{response.get('errorCode', 'Unknown')}: {response.get('errorMessage', 'Unknown error')}"
+        )
+
+        frappe.db.set_value(
+            "Integration Request",
+            integration_request.name,
+            {
+                "status": status,
+                "output": output,
+                "request_id": response.get("OriginatorConversationID"),
+            },
+            update_modified=True,
+        )
+
+        frappe.db.commit()
+
+        if status == "Completed":
+            return {
+                "status": "success",
+                "message": response.get(
+                    "ResponseDescription", "Transaction status check completed"
+                ),
+                "data": response,
+            }
+        else:
+            return {"status": "error", "message": output}
+
+    except Exception as e:
+        if "integration_request" in locals():
+            frappe.db.set_value(
+                "Integration Request",
+                integration_request.name,
+                {"status": "Failed", "output": str(e)},
+                update_modified=True,
+            )
+            frappe.db.commit()
+
+        frappe.log_error(title="Mpesa Transaction Status Error", message=str(e))
+        return {"status": "error", "message": str(e)}
