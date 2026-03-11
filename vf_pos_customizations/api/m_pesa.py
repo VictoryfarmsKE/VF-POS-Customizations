@@ -25,7 +25,7 @@ def confirmation(**kwargs) -> Dict[str, Any]:
     """
     try:
         args = frappe._dict(kwargs)
-        frappe.set_user("Administrator")
+        frappe.set_user("Guest")
 
         frappe.enqueue(
             "vf_pos_customizations.api.m_pesa.delayed_insert_mpesa_payment",
@@ -54,8 +54,6 @@ def confirmation(**kwargs) -> Dict[str, Any]:
     except Exception as e:
         frappe.log_error(frappe.get_traceback(), f"M-Pesa Confirmation Error: {str(e)[:140]}")
         return {"ResultCode": 1, "ResultDesc": "Rejected"}
-    finally:
-        frappe.set_user("Guest")
 
 
 def delayed_insert_mpesa_payment(payment_data: Dict[str, Any]) -> None:
@@ -74,8 +72,17 @@ def delayed_insert_mpesa_payment(payment_data: Dict[str, Any]) -> None:
 
         doc.insert(ignore_permissions=True)
         frappe.db.commit()
-    except Exception:
+    except Exception as e:
+        #Detect duplicate-key
+        msg = str(e).lower()
+        if any(k in msg for k in ("duplicate", "duplicate entry", "unique constraint", "unique" , "1062")):
+            frappe.logger().warning(
+                f"Mpesa insert skipped due to duplicate record for TransID {payment_data.get('transid')} - {msg[:200]}"
+            )
+            return
+        #log as failed and trigger retry
         frappe.log_error(frappe.get_traceback(), "Delayed Mpesa Payment Insert Error")
+        raise
     
     
 @frappe.whitelist(allow_guest=True)
@@ -223,8 +230,17 @@ def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
         }
 
         saf_url = f"{base_url}/mpesa/transactionstatus/v1/query"
-        r = requests.post(saf_url, headers=headers, json=payload)
-        response = r.json()
+        try:
+            r = requests.post(saf_url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
+            r.raise_for_status()
+            try:
+                response = r.json()
+            except ValueError:
+                response = {"errorCode": "invalid_json", "errorMessage": r.text}
+
+        except requests.exceptions.RequestException as re:
+            frappe.log_error(frappe.get_traceback(), f"Mpesa TransactionStatus HTTP Error: {str(re)[:140]}")
+            response = {"errorCode": "http_error", "errorMessage": str(re)}
 
         status = "Completed" if response.get("ResponseCode") == "0" else "Failed"
         output = (
