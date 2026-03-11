@@ -231,7 +231,7 @@ def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
 
         saf_url = f"{base_url}/mpesa/transactionstatus/v1/query"
         try:
-            r = requests.post(saf_url, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
+            r = requests.post(saf_url, headers=headers, json=payload, timeout=30)
             r.raise_for_status()
             try:
                 response = r.json()
