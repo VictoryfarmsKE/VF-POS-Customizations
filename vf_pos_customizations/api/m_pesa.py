@@ -243,11 +243,19 @@ def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
             response = {"errorCode": "http_error", "errorMessage": str(re)}
 
         status = "Completed" if response.get("ResponseCode") == "0" else "Failed"
-        output = (
-            frappe.as_json(response)
-            if status == "Completed"
-            else f"{response.get('errorCode', 'Unknown')}: {response.get('errorMessage', 'Unknown error')}"
-        )
+        # Always store the full response JSON for diagnostics
+        output = frappe.as_json(response)
+
+        # Derive a human message: prefer known fields, fall back to full JSON
+        if status == "Completed":
+            message_text = response.get("ResponseDescription", "Transaction status check completed")
+        else:
+            message_text = (
+                response.get("errorMessage")
+                or response.get("error")
+                or response.get("ResponseDescription")
+                or output
+            )
 
         frappe.db.set_value(
             "Integration Request",
@@ -263,15 +271,9 @@ def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
         frappe.db.commit()
 
         if status == "Completed":
-            return {
-                "status": "success",
-                "message": response.get(
-                    "ResponseDescription", "Transaction status check completed"
-                ),
-                "data": response,
-            }
+            return {"status": "success", "message": message_text, "data": response}
         else:
-            return {"status": "error", "message": output}
+            return {"status": "error", "message": message_text, "data": response}
 
     except Exception as e:
         if "integration_request" in locals():
