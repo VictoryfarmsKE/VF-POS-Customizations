@@ -5,7 +5,9 @@ from requests.auth import HTTPBasicAuth
 
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import flt, get_request_site_address
+from frappe.utils.background_jobs import enqueue
+from frappe.utils import now_datetime
 from typing import Optional, List, Dict, Any
 
 def get_token(app_key: str, app_secret: str, base_url: str) -> str:
@@ -160,7 +162,6 @@ def submit_mpesa_payment(mpesa_payment: str, customer: str) -> Dict[str, Any]:
 def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
     """
     Trigger a transaction status check for a given Mpesa transaction.
-    Adapted from frappe_mpsa_payments MpesaSettings.trigger_transaction_status.
     """
     from urllib.parse import urlparse
     try:
@@ -169,12 +170,11 @@ def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
         site_url = f"{parsed_url.scheme}://{parsed_url.hostname}"
 
         queue_timeout_url = (
-            site_url
-            + "vf_pos_customizations.vf_pos_customizations.api.m_pesa.handle_queue_timeout"
+            site_url + "/api/method/vf_pos_customizations.api.m_pesa.handle_queue_timeout"
         )
         result_url = (
             site_url
-            + "vf_pos_customizations.vf_pos_customizations.api.m_pesa.handle_transaction_status_result"
+            + "/api/method/vf_pos_customizations.api.m_pesa.handle_transaction_status_result"
         )
 
         settings = frappe.get_doc("Mpesa Settings", mpesa_settings)
@@ -223,7 +223,6 @@ def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
             "QueueTimeOutURL": queue_timeout_url,
             "ResultURL": result_url,
         }
-
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -264,7 +263,6 @@ def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
             },
             update_modified=True,
         )
-
         frappe.db.commit()
 
         if status == "Completed":
@@ -288,7 +286,10 @@ def trigger_transaction_status(mpesa_settings, transaction_id, remarks="OK"):
 
 @frappe.whitelist(allow_guest=True)
 def handle_transaction_status_result():
+    #log when called
+    frappe.log_error("Mpesa Transaction status Webhook called", "Mpesa Webhook Info")
     """Handle the transaction status response from Mpesa for vf_pos_customizations."""
+
     try:
         response = frappe.request.data
         response_data = json.loads(response)

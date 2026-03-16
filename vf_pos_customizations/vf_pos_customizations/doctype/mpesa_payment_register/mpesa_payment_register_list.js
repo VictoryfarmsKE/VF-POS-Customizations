@@ -82,6 +82,8 @@ frappe.listview_settings["Mpesa Payment Register"] = {
 								freeze_message: __("Checking transaction status..."),
 								callback: (r) => {
 									if (r.message) {
+										//console log the response
+										console.log("Transaction status response:", r.message);
 										if (r.message.status === "error") {
 											frappe.hide_progress();
 											frappe.msgprint({
