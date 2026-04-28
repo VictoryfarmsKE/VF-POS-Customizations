@@ -167,9 +167,9 @@ page_js = {
 # }
 # Override Whitelisted Methods
 # ----------------------------
-override_whitelisted_methods = {
-    "erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices": "vf_pos_customizations.custom.point_of_sale.get_pos_invoices"
-}
+# override_whitelisted_methods = {
+#     "erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry.get_pos_invoices": "vf_pos_customizations.custom.point_of_sale.get_pos_invoices"
+# }
 
 doc_events = {
     "POS Invoice": {
@@ -245,8 +245,7 @@ scheduler_events = {
 # }
 
 override_whitelisted_methods = {
-    "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list": "vf_pos_customizations.custom.point_of_sale.get_past_order_list",
-    "erpnext.selling.page.point_of_sale.point_of_sale.create_payment_request": "vf_pos_customizations.custom.point_of_sale.get_past_order_list"
+    "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list": "vf_pos_customizations.custom.point_of_sale.get_past_order_list"
 }
 
 #

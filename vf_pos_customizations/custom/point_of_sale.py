@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
 from frappe.utils import now_datetime, nowdate, nowtime, get_datetime
 from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import make_closing_entry_from_opening
@@ -6,82 +7,46 @@ import math
 
 
 @frappe.whitelist()
-def get_pos_invoices(start, end, pos_profile, user=None):
-	#Override of ERPNext get_pos_invoices
-	if not user:
-		user = frappe.session.user
-	data = frappe.db.sql(
-		"""
-	select
-		name, timestamp(posting_date, posting_time) as "timestamp"
-	from
-		`tabPOS Invoice`
-	where
-		owner = %s and docstatus = 1 and pos_profile = %s and ifnull(consolidated_invoice,'') = ''
-	order by
-		timestamp
-	""",
-		(user, pos_profile),
-		as_dict=1,
-	)
+def get_past_order_list(search_term, status, limit=20, pos_profile=None):
+    fields = ["name", "grand_total", "currency", "customer", "customer_name", "posting_time", "posting_date"]
+    invoice_list = []
+    filters = {"status": status}
 
-	data = list(filter(lambda d: get_datetime(start) <= get_datetime(d.timestamp) <= get_datetime(end), data))
-	data = [frappe.get_doc("POS Invoice", d.name).as_dict() for d in data]
-	return data
+    if pos_profile:
+        filters["pos_profile"] = pos_profile
 
-@frappe.whitelist()
-def get_past_order_list(search_term, status, pos_profile, limit=20):
-	fields = ["name", "grand_total", "currency", "customer", "customer_name", "posting_time", "posting_date"]
-	invoice_list = []
+    if search_term and status:
+        invoices_by_customer = frappe.db.get_list(
+            "POS Invoice",
+            filters=filters,
+            or_filters={
+                "customer_name": ["like", f"%{search_term}%"],
+                "customer": ["like", f"%{search_term}%"],
+            },
+            fields=fields,
+            page_length=limit,
+        )
 
-	if search_term and status:
-		invoices_by_customer = frappe.db.get_list(
-			"POS Invoice",
-             #filter by pos_profile
-             
-			filters={"status": status, "pos_profile": pos_profile},
-   
+        name_filters = dict(filters)
+        name_filters["name"] = ["like", f"%{search_term}%"]
 
-			or_filters={
-				"customer_name": ["like", f"%{search_term}%"],
-				"customer": ["like", f"%{search_term}%"],
-			},
-			fields=fields,
-			page_length=limit,
-		)
-		invoices_by_name = frappe.db.get_list(
-			"POS Invoice",
-			filters={"name": ["like", f"%{search_term}%"], "status": status,"pos_profile": pos_profile},
-			fields=fields,
-			page_length=limit,
-		)
+        invoices_by_name = frappe.db.get_list(
+            "POS Invoice",
+            filters=name_filters,
+            fields=fields,
+            page_length=limit,
+        )
 
-		invoice_list = invoices_by_customer + invoices_by_name
-	elif status:
-		invoice_list = frappe.db.get_list(
-			"POS Invoice", filters={"status": status,"pos_profile": pos_profile}, fields=fields, page_length=limit
-		)
+        invoice_list = invoices_by_customer + invoices_by_name
+    elif status:
+        invoice_list = frappe.db.get_list(
+            "POS Invoice",
+            filters=filters,
+            fields=fields,
+            page_length=limit,
+        )
 
-	return invoice_list
-
-@frappe.whitelist()
-def create_payment_request(self):
-	for pay in self.payments:
-		if pay.type == "Phone":
-			if pay.amount <= 0:
-				frappe.throw(_("Payment amount cannot be less than or equal to 0"))
-
-			if not self.contact_mobile:
-				frappe.throw(_("Please enter the phone number first"))
-
-			pay_req = self.get_existing_payment_request(pay)
-			if not pay_req:
-				pay_req = self.get_new_payment_request(pay)
-				pay_req.submit()
-			else:
-				pay_req.request_phone_payment()
-
-			return pay_req
+    return invoice_list
 
 def auto_close_open_nrb_pos():
     # frappe.log_error("Auto-closing open Nairobi POS sessions")
