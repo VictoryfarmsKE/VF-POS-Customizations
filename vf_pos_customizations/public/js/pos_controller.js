@@ -2,6 +2,14 @@ frappe.after_ajax(() => {
     let retries = 0;
     const interval = setInterval(() => {
         const POSController = erpnext?.PointOfSale?.Controller;
+        const ItemSelector = erpnext?.PointOfSale?.ItemSelector;
+
+        // erpnext 15.121.6 removed ItemSelector.resize_selector but the
+        // controller still calls it when opening item details - restore a no-op
+        if (ItemSelector && !ItemSelector.prototype.resize_selector) {
+            ItemSelector.prototype.resize_selector = function () {};
+        }
+
         if (POSController && !POSController.prototype.__vf_customized) {
             POSController.prototype.__vf_customized = true;
 
@@ -26,7 +34,7 @@ frappe.after_ajax(() => {
                 frappe.run_serially([
                     () => frappe.dom.freeze(),
                     () => this.make_new_invoice(),
-                    () => this.item_selector.toggle_component(true),
+                    () => this.item_selector && this.item_selector.toggle_component(true),
                     () => this.cart.enable_customer_selection(),
                     () => this.payment.toggle_component(false),
                     () => this.item_details.toggle_component(false),
