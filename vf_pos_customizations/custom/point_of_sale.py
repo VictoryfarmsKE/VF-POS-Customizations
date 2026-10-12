@@ -72,9 +72,10 @@ def auto_close_open_nrb_pos():
 
 	  pos_profiles = frappe.get_all(
         "POS Profile",
-        filters={"name": "Customer Direct - VLC", "custom_region": "Nairobi Region"},
+        filters={"name": "Customer Direct - VLC"},
         fields=["name"]
     )
+
     #then filter by the above pos profiles
     open_entries = frappe.get_all(
         "POS Opening Entry",
