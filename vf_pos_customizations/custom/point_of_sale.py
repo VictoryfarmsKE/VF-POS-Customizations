@@ -61,9 +61,18 @@ def create_payment_request(self):
 def auto_close_open_nrb_pos():
     frappe.log_error("Auto-closing open Nairobi POS sessions")
     #find POS Profiles where the POS Profile field custom_region = "Nairobi Region"
-    pos_profiles = frappe.get_all(
+  # pos_profiles = frappe.get_all(
+#     "POS Profile",
+#     filters={
+#         "name": ["!=", "Customer Direct - VLC"],
+#         "custom_region": "Nairobi Region"
+#     },
+#     fields=["name"]
+# )
+
+	  pos_profiles = frappe.get_all(
         "POS Profile",
-        filters={"name": ["!=", "Customer Direct - VLC"], "custom_region": "Nairobi Region"},
+        filters={"name": "Customer Direct - VLC", "custom_region": "Nairobi Region"},
         fields=["name"]
     )
     #then filter by the above pos profiles
