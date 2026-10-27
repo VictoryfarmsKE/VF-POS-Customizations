@@ -11,7 +11,9 @@ RECENT_FIRST = "modified desc, name desc"
 
 
 @frappe.whitelist()
-def get_past_order_list(search_term, status, limit=20, pos_profile=None):
+def get_past_order_list(
+    search_term: str | None, status: str | None, limit: int = 20, pos_profile: str | None = None
+):
     fields = ["name", "grand_total", "currency", "customer", "customer_name", "posting_time", "posting_date"]
 
     if not status:
