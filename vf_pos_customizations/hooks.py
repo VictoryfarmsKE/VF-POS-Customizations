@@ -6,14 +6,14 @@ app_email = "christinek@victoryfarmskenya.com"
 app_license = "mit"
 
 fixtures = [
-    "Client Script",
-    "Server Script",
-    "Custom Field",
-    "Property Setter",
-    {"dt": "Client Script", "filters": [["module", "like", "VF POS Customizations"]]},
-    {"dt": "Server Script", "filters": [["module", "like", "VF POS Customizations"]]},
-    {"dt": "Custom Field", "filters": [["module", "like", "VF POS Customizations"]]},
-    {"dt": "Property Setter", "filters": [["module", "like", "VF POS Customizations"]]},
+	"Client Script",
+	"Server Script",
+	"Custom Field",
+	"Property Setter",
+	{"dt": "Client Script", "filters": [["module", "like", "VF POS Customizations"]]},
+	{"dt": "Server Script", "filters": [["module", "like", "VF POS Customizations"]]},
+	{"dt": "Custom Field", "filters": [["module", "like", "VF POS Customizations"]]},
+	{"dt": "Property Setter", "filters": [["module", "like", "VF POS Customizations"]]},
 ]
 # Apps
 # ------------------
@@ -38,9 +38,9 @@ fixtures = [
 # app_include_css = "/assets/vf_pos_customizations/css/vf_pos_customizations.css"
 # app_include_js = "/assets/vf_pos_customizations/js/vf_pos_customizations.js"
 app_include_js = [
-    "/assets/vf_pos_customizations/js/pos_controller.js",
-    "/assets/vf_pos_customizations/js/pos_past_order_list.js",
-    "/assets/vf_pos_customizations/js/pos_payment.js"
+	"/assets/vf_pos_customizations/js/pos_controller.js",
+	"/assets/vf_pos_customizations/js/pos_past_order_list.js",
+	"/assets/vf_pos_customizations/js/pos_payment.js",
 ]
 # include js, css files in header of web template
 # web_include_css = "/assets/vf_pos_customizations/css/vf_pos_customizations.css"
@@ -56,11 +56,11 @@ app_include_js = [
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 page_js = {
-    "point-of-sale": [
-        "public/js/pos_controller.js",
-        "public/js/pos_past_order_list.js",
-        "public/js/pos_payment.js"
-    ]
+	"point-of-sale": [
+		"public/js/pos_controller.js",
+		"public/js/pos_past_order_list.js",
+		"public/js/pos_payment.js",
+	]
 }
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"} (to use)
@@ -166,18 +166,16 @@ page_js = {
 # 	}
 # }
 doc_events = {
-    "POS Invoice": {
-        "before_submit": "vf_pos_customizations.vf_pos_customizations.customization.pos_invoice.pos_invoice.before_submit_invoice"
-    }
+	"POS Invoice": {
+		"before_submit": "vf_pos_customizations.vf_pos_customizations.customization.pos_invoice.pos_invoice.before_submit_invoice"
+	}
 }
 
 # Scheduled Tasks
 # ---------------
 
 scheduler_events = {
-    "daily": [
-        "vf_pos_customizations.vf_pos_customizations.doctype.pezesha_settings.pezesha_settings.corn"
-    ]
+	"daily": ["vf_pos_customizations.vf_pos_customizations.doctype.pezesha_settings.pezesha_settings.corn"]
 }
 
 # scheduler_events = {
@@ -207,22 +205,14 @@ scheduler_events = {
 # }
 
 scheduler_events = {
-    "cron": {
-        # Western Branch: 7am, 10am, 1pm, 4pm
-        "0 7,10,13,16,23 * * *": [
-            "vf_pos_customizations.custom.point_of_sale.auto_close_open_western_pos"
-        ],
-
-        # Nairobi Branches: 9am, 12pm, 3pm, 6pm
-        "0 9,12,15,18,23 * * *": [
-            "vf_pos_customizations.custom.point_of_sale.auto_close_open_nrb_pos"
-        ],
-
-        # Mombasa Branch: 8am, 11am, 2pm, 5pm
-        "0 8,11,14,17,23 * * *": [
-            "vf_pos_customizations.custom.point_of_sale.auto_close_open_msa_pos"
-        ],
-    }
+	"cron": {
+		# Western Branch: 7am, 10am, 1pm, 4pm
+		"0 7,10,13,16,23 * * *": ["vf_pos_customizations.custom.point_of_sale.auto_close_open_western_pos"],
+		# Nairobi Branches: 9am, 12pm, 3pm, 6pm
+		"0 9,12,15,18,23 * * *": ["vf_pos_customizations.custom.point_of_sale.auto_close_open_nrb_pos"],
+		# Mombasa Branch: 8am, 11am, 2pm, 5pm
+		"0 8,11,14,17,23 * * *": ["vf_pos_customizations.custom.point_of_sale.auto_close_open_msa_pos"],
+	}
 }
 
 # Testing
@@ -238,8 +228,8 @@ scheduler_events = {
 # }
 
 override_whitelisted_methods = {
-    "erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list": "vf_pos_customizations.custom.point_of_sale.get_past_order_list",
-    "erpnext.selling.page.point_of_sale.point_of_sale.create_payment_request": "vf_pos_customizations.custom.point_of_sale.get_past_order_list"
+	"erpnext.selling.page.point_of_sale.point_of_sale.get_past_order_list": "vf_pos_customizations.custom.point_of_sale.get_past_order_list",
+	"erpnext.selling.page.point_of_sale.point_of_sale.create_payment_request": "vf_pos_customizations.custom.point_of_sale.get_past_order_list",
 }
 
 #
@@ -306,4 +296,3 @@ override_whitelisted_methods = {
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-
