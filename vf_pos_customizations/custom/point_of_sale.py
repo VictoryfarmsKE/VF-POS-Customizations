@@ -1,52 +1,101 @@
 import frappe
 from frappe import _
 from erpnext.accounts.doctype.payment_request.payment_request import make_payment_request
-from frappe.utils import now_datetime, nowdate, nowtime, get_datetime
+from frappe.utils import getdate, now_datetime, nowdate, nowtime, get_datetime
 from erpnext.accounts.doctype.pos_closing_entry.pos_closing_entry import make_closing_entry_from_opening
 import math
 
 
-@frappe.whitelist()
-def get_past_order_list(search_term, status, limit=20, pos_profile=None):
-    fields = ["name", "grand_total", "currency", "customer", "customer_name", "posting_time", "posting_date"]
-    invoice_list = []
-    filters = {"status": status}
+CUSTOMER_LIMIT = 50
+RECENT_FIRST = "modified desc, name desc"
 
+
+@frappe.whitelist()
+def get_past_order_list(
+    search_term: str | None, status: str | None, limit: int = 20, pos_profile: str | None = None
+):
+    fields = ["name", "grand_total", "currency", "customer", "customer_name", "posting_time", "posting_date"]
+
+    if not status:
+        return []
+
+    filters = {"status": status}
     if pos_profile:
         filters["pos_profile"] = pos_profile
 
-    if search_term and status:
+    search_term = (search_term or "").strip()
+
+    if not search_term:
+        return frappe.db.get_list(
+            "POS Invoice", filters=filters, fields=fields, order_by=RECENT_FIRST, page_length=limit
+        )
+
+    invoices_by_customer = []
+    customers = matching_customers(search_term)
+    if customers:
         invoices_by_customer = frappe.db.get_list(
             "POS Invoice",
-            filters=filters,
-            or_filters={
-                "customer_name": ["like", f"%{search_term}%"],
-                "customer": ["like", f"%{search_term}%"],
-            },
+            filters={**filters, "customer": ["in", customers]},
             fields=fields,
+            order_by=RECENT_FIRST,
             page_length=limit,
         )
 
-        name_filters = dict(filters)
-        name_filters["name"] = ["like", f"%{search_term}%"]
+    invoices_by_name = frappe.db.get_list(
+        "POS Invoice",
+        filters=filters,
+        or_filters=[["name", "like", pattern] for pattern in invoice_name_patterns(search_term)],
+        fields=fields,
+        order_by=RECENT_FIRST,
+        page_length=limit,
+    )
 
-        invoices_by_name = frappe.db.get_list(
-            "POS Invoice",
-            filters=name_filters,
-            fields=fields,
-            page_length=limit,
-        )
+    seen = set()
+    return [
+        invoice
+        for invoice in invoices_by_customer + invoices_by_name
+        if not (invoice.name in seen or seen.add(invoice.name))
+    ]
 
-        invoice_list = invoices_by_customer + invoices_by_name
-    elif status:
-        invoice_list = frappe.db.get_list(
-            "POS Invoice",
-            filters=filters,
-            fields=fields,
-            page_length=limit,
-        )
 
-    return invoice_list
+def matching_customers(search_term):
+    if "victoryfarmsdeveloper" in frappe.get_installed_apps():
+        from victoryfarmsdeveloper.setup.till_customer_search import find_candidates
+
+        return find_candidates(search_term)
+
+    return frappe.get_all(
+        "Customer",
+        or_filters=[
+            ["name", "like", f"{search_term}%"],
+            ["customer_name", "like", f"{search_term}%"],
+            ["mobile_no", "like", f"{search_term}%"],
+        ],
+        pluck="name",
+        limit=CUSTOMER_LIMIT,
+    )
+
+
+def invoice_name_patterns(search_term):
+    term = search_term.upper().replace(" ", "")
+    if not term.isdigit():
+        return [f"{term}%"]
+
+    this_year = getdate(nowdate()).year
+    return [
+        f"{prefix}{term}%"
+        for prefix in invoice_series_prefixes((this_year, this_year - 1))
+    ]
+
+
+def invoice_series_prefixes(years):
+    options = frappe.get_meta("POS Invoice").get_field("naming_series").options or ""
+    series = [option.strip() for option in options.split("\n") if option.strip()]
+    return [
+        option.replace(".YYYY.", str(year)).replace(".", "")
+        for option in series
+        for year in years
+    ]
 
 def auto_close_open_nrb_pos():
     # frappe.log_error("Auto-closing open Nairobi POS sessions")
