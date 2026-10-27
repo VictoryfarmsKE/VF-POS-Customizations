@@ -363,7 +363,7 @@ frappe.pages["pos-payments"].on_page_load = function (wrapper) {
 						action() {
 							window.location.reload();
 						},
-					},s
+					},
 				});
 			}
 		});
