@@ -14,29 +14,6 @@ from erpnext.accounts.utils import get_outstanding_invoices as _get_outstanding_
 from operator import itemgetter
 import ast
 
-def get_bank_cash_account(company, mode_of_payment, bank_account=None):
-    """
-    Retrieve the default bank or cash account based on the company and mode of payment.
-
-    Args:
-        company (str): Company for which the account is being retrieved.
-        mode_of_payment (str): Mode of payment for the transaction.
-        bank_account (str, optional): Specific bank account to retrieve. Defaults to None.
-
-    Returns:
-        BankAccount: Default bank or cash account.
-    """
-    bank = get_default_bank_cash_account(
-        company, "Bank", mode_of_payment=mode_of_payment, account=bank_account
-    )
-
-    if not bank:
-        bank = get_default_bank_cash_account(
-            company, "Cash", mode_of_payment=mode_of_payment, account=bank_account
-        )
-
-    return bank
-
 def set_paid_amount_and_received_amount(
     party_account_currency,
     bank,
